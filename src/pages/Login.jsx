@@ -15,7 +15,12 @@ export default function Login() {
     setLoading(true); setError('')
     try {
       const data = await login({ identifier, password })
-      saveUser({ token: data.token, role: data.role })
+      saveUser({
+        token: data.token,
+        role: data.role,
+        name: data.name,
+        id: data.id
+      })
       if (data.role === 'ADMIN') navigate('/admin')
       else navigate('/user')
     } catch (err) {

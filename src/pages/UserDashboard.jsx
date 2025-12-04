@@ -1,47 +1,55 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { getCurrentUser, logout } from '../services/api'
+import { getCurrentUser, logout, getUserStats } from '../services/api'
+import axios from 'axios'
+
+const API_URL = 'http://localhost:4000/api'
 
 export default function UserDashboard() {
   const navigate = useNavigate()
   const user = getCurrentUser()
   const [searchQuery, setSearchQuery] = useState('')
+  const [stats, setStats] = useState({
+    productsTakenToday: 0,
+    currentStockHolding: 0
+  })
+  const [inventory, setInventory] = useState([])
+  const [loading, setLoading] = useState(true)
 
-  // Mock data - replace with actual API calls
-  const stats = {
-    productsTakenToday: 12,
-    currentStockHolding: 87
-  }
+  useEffect(() => {
+    loadData()
+  }, [])
 
-  const inventory = [
-    {
-      id: 1,
-      name: 'Calacatta Gold',
-      category: 'Polished Marble',
-      sku: 'CG-PM-1224',
-      quantity: 25,
-      dateAcquired: '2023-10-26',
-      image: 'https://via.placeholder.com/48'
-    },
-    {
-      id: 2,
-      name: 'Nero Marquina',
-      category: 'Honed Slate',
-      sku: 'NM-HS-1818',
-      quantity: 40,
-      dateAcquired: '2023-10-25',
-      image: 'https://via.placeholder.com/48'
-    },
-    {
-      id: 3,
-      name: 'Carrara White',
-      category: 'Matte Ceramic',
-      sku: 'CW-MC-0612',
-      quantity: 22,
-      dateAcquired: '2023-10-25',
-      image: 'https://via.placeholder.com/48'
+  async function loadData() {
+    try {
+      // Fetch user stats
+      const statsData = await getUserStats()
+      setStats({
+        productsTakenToday: statsData.productsTaken || 0,
+        currentStockHolding: statsData.balanceToReturn || 0
+      })
+
+      // Fetch staff inventory
+      const token = localStorage.getItem('token')
+      const response = await axios.get(`${API_URL}/staff-inventory/${user.id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+
+      setInventory(response.data.map(item => ({
+        id: item.product_id,
+        name: item.product?.name || 'Unknown Product',
+        category: item.product?.category || '',
+        sku: item.product?.barcode || '',
+        quantity: item.quantity,
+        dateAcquired: new Date().toISOString().split('T')[0], // Simplified
+        image: item.product?.image_url || 'https://via.placeholder.com/48'
+      })))
+    } catch (error) {
+      console.error('Failed to load data:', error)
+    } finally {
+      setLoading(false)
     }
-  ]
+  }
 
   const filteredInventory = inventory.filter(item =>
     item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -81,18 +89,25 @@ export default function UserDashboard() {
             <span className="text-sm font-medium">Dashboard</span>
           </button>
           <button
-            onClick={() => navigate('/scan')}
-            className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-800 dark:text-zinc-200"
-          >
-            <span className="material-symbols-outlined">qr_code_scanner</span>
-            <span className="text-sm font-medium">Scan</span>
-          </button>
-          <button
             onClick={() => navigate('/transfer')}
             className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-800 dark:text-zinc-200"
           >
             <span className="material-symbols-outlined">sync_alt</span>
-            <span className="text-sm font-medium">Transfers</span>
+            <span className="text-sm font-medium">Transfer to Customer</span>
+          </button>
+          <button
+            onClick={() => navigate('/return')}
+            className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-800 dark:text-zinc-200"
+          >
+            <span className="material-symbols-outlined">keyboard_return</span>
+            <span className="text-sm font-medium">Returns</span>
+          </button>
+          <button
+            onClick={() => navigate('/transactions')}
+            className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-800 dark:text-zinc-200"
+          >
+            <span className="material-symbols-outlined">history</span>
+            <span className="text-sm font-medium">Transaction History</span>
           </button>
         </nav>
 
@@ -126,21 +141,28 @@ export default function UserDashboard() {
               </h1>
               <p className="text-zinc-500 dark:text-zinc-400">Here's your personal stock summary for today.</p>
             </div>
-            <button className="flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-lg font-medium hover:bg-primary/90">
+            <button
+              onClick={() => navigate('/transfer')}
+              className="flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-lg font-medium hover:bg-primary/90"
+            >
               <span className="material-symbols-outlined">add</span>
-              Scan New Item
+              Transfer Stock
             </button>
           </div>
 
           {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
             <div className="bg-white dark:bg-[#191714] rounded-xl border border-zinc-200 dark:border-zinc-800 p-6">
-              <div className="text-sm text-zinc-500 dark:text-zinc-400 mb-2">Products Taken Today</div>
-              <div className="text-4xl font-bold text-zinc-900 dark:text-white">{stats.productsTakenToday}</div>
+              <div className="text-sm text-zinc-500 dark:text-zinc-400 mb-2">Products In Your Inventory</div>
+              <div className="text-4xl font-bold text-zinc-900 dark:text-white">
+                {loading ? '...' : inventory.length}
+              </div>
             </div>
             <div className="bg-white dark:bg-[#191714] rounded-xl border border-zinc-200 dark:border-zinc-800 p-6">
-              <div className="text-sm text-zinc-500 dark:text-zinc-400 mb-2">Current Stock Holding</div>
-              <div className="text-4xl font-bold text-zinc-900 dark:text-white">{stats.currentStockHolding}</div>
+              <div className="text-sm text-zinc-500 dark:text-zinc-400 mb-2">Total Items Holding</div>
+              <div className="text-4xl font-bold text-zinc-900 dark:text-white">
+                {loading ? '...' : stats.currentStockHolding}
+              </div>
             </div>
           </div>
 
@@ -162,42 +184,44 @@ export default function UserDashboard() {
               </div>
             </div>
 
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50">
-                  <th className="text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase px-6 py-4">Product</th>
-                  <th className="text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase px-6 py-4">SKU</th>
-                  <th className="text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase px-6 py-4">Quantity</th>
-                  <th className="text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase px-6 py-4">Date Acquired</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredInventory.map(item => (
-                  <tr key={item.id} className="border-b border-zinc-100 dark:border-zinc-800/50 hover:bg-zinc-50 dark:hover:bg-zinc-900/30 transition-colors">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <img
-                          src={item.image}
-                          alt={item.name}
-                          className="w-12 h-12 rounded object-cover bg-zinc-100 dark:bg-zinc-800"
-                        />
-                        <div>
-                          <div className="font-medium text-sm text-zinc-900 dark:text-white">{item.name}</div>
-                          <div className="text-xs text-zinc-500 dark:text-zinc-400">{item.category}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-zinc-900 dark:text-white">{item.sku}</td>
-                    <td className="px-6 py-4 text-sm text-zinc-900 dark:text-white">{item.quantity}</td>
-                    <td className="px-6 py-4 text-sm text-zinc-500 dark:text-zinc-400">{item.dateAcquired}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-
-            {filteredInventory.length === 0 && (
+            {loading ? (
               <div className="text-center py-12 text-zinc-500 dark:text-zinc-400">
-                No inventory items found
+                Loading inventory...
+              </div>
+            ) : filteredInventory.length > 0 ? (
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50">
+                    <th className="text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase px-6 py-4">Product</th>
+                    <th className="text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase px-6 py-4">SKU</th>
+                    <th className="text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase px-6 py-4">Quantity</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredInventory.map(item => (
+                    <tr key={item.id} className="border-b border-zinc-100 dark:border-zinc-800/50 hover:bg-zinc-50 dark:hover:bg-zinc-900/30 transition-colors">
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <img
+                            src={item.image}
+                            alt={item.name}
+                            className="w-12 h-12 rounded object-cover bg-zinc-100 dark:bg-zinc-800"
+                          />
+                          <div>
+                            <div className="font-medium text-sm text-zinc-900 dark:text-white">{item.name}</div>
+                            <div className="text-xs text-zinc-500 dark:text-zinc-400">{item.category}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-zinc-900 dark:text-white">{item.sku}</td>
+                      <td className="px-6 py-4 text-sm text-zinc-900 dark:text-white">{item.quantity}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <div className="text-center py-12 text-zinc-500 dark:text-zinc-400">
+                {searchQuery ? `No results for "${searchQuery}"` : 'No inventory items yet'}
               </div>
             )}
           </div>

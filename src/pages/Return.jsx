@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react'
-import { fetchProducts, createReturn } from '../services/api'
-import BarcodeScanner from '../components/BarcodeScanner'
+import { fetchProducts, createReturn, getCurrentUser } from '../services/api'
 import Sidebar from '../components/Sidebar'
+import UserSidebar from '../components/UserSidebar'
+import BarcodeScanner from '../components/BarcodeScanner'
 
 export default function ReturnPage() {
   const [products, setProducts] = useState([])
@@ -68,7 +69,8 @@ export default function ReturnPage() {
     <div className="flex min-h-screen bg-zinc-50 dark:bg-[#1c1a16]">
       {showScanner && <BarcodeScanner onScan={handleScan} onClose={() => setShowScanner(false)} />}
 
-      <Sidebar />
+      {/* Conditional Sidebar based on role */}
+      {getCurrentUser()?.role === 'ADMIN' ? <Sidebar /> : <UserSidebar />}
 
       {/* Main Content */}
       <main className="flex-1 ml-64 p-8">

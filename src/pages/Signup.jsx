@@ -16,8 +16,13 @@ export default function Signup() {
     e?.preventDefault()
     setLoading(true); setError('')
     try {
-      const data = await signup({ name, identifier, password, role })
-      saveUser({ token: data.token, role: data.role })
+      const data = await signup({ name, mobile, password, role })
+      saveUser({
+        token: data.token,
+        role: data.role,
+        name: data.name,
+        id: data.id
+      })
       if (data.role === 'ADMIN') navigate('/admin')
       else navigate('/user')
     } catch (err) {

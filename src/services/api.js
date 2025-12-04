@@ -28,7 +28,13 @@ export function setToken(token) {
 }
 
 export function saveUser(data) {
-  localStorage.setItem('tsm_user', JSON.stringify(data))
+  // Save complete user data: token, role, name, id
+  localStorage.setItem('tsm_user', JSON.stringify({
+    token: data.token,
+    role: data.role,
+    name: data.name,
+    id: data.id
+  }))
   setToken(data.token)
 }
 
@@ -80,6 +86,16 @@ export async function createTransfer(payload) {
 
 export async function createReturn(payload) {
   const res = await client.post('/returns', payload)
+  return res.data
+}
+
+export async function createUserTransaction(payload) {
+  const res = await client.post('/user-transactions', payload)
+  return res.data
+}
+
+export async function getUserTransactions() {
+  const res = await client.get('/user-transactions')
   return res.data
 }
 

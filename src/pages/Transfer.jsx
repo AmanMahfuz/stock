@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react'
-import { fetchUsers, fetchProducts, createTransfer } from '../services/api'
-import BarcodeScanner from '../components/BarcodeScanner'
+import { fetchUsers, fetchProducts, createTransfer, getCurrentUser } from '../services/api'
 import Sidebar from '../components/Sidebar'
+import UserSidebar from '../components/UserSidebar'
+import BarcodeScanner from '../components/BarcodeScanner'
 
 export default function Transfer() {
   const [users, setUsers] = useState([])
@@ -61,11 +62,13 @@ export default function Transfer() {
         toUserId,
         items: items.map(i => ({ productId: i.id, qty: i.qty }))
       })
-      alert('Transfer successful')
+      alert('✅ Transfer successful!')
       setItems([])
       setToUserId('')
     } catch (e) {
-      alert('Transfer failed')
+      // Show specific error message from backend
+      const errorMessage = e.response?.data?.message || e.message || 'Transfer failed'
+      alert(`❌ ${errorMessage} `)
     }
   }
 
@@ -73,7 +76,8 @@ export default function Transfer() {
     <div className="flex min-h-screen bg-zinc-50 dark:bg-[#1c1a16]">
       {showScanner && <BarcodeScanner onScan={handleScan} onClose={() => setShowScanner(false)} />}
 
-      <Sidebar />
+      {/* Conditional Sidebar based on role */}
+      {getCurrentUser()?.role === 'ADMIN' ? <Sidebar /> : <UserSidebar />}
 
       {/* Main Content */}
       <main className="flex-1 ml-64 p-8">
@@ -110,50 +114,53 @@ export default function Transfer() {
                 <div className="mb-4">
                   <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">Search by Product Name</label>
                   <select
-                    className="w-full px-4 py-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-sm text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-primary/20"
                     value=""
                     onChange={e => {
-                      const value = e.target.value
-                      if (value) {
-                        const product = products.find(p => (p.id || p.barcode) === value)
+                      if (e.target.value) {
+                        const product = products.find(p => p.id === parseInt(e.target.value))
                         if (product) {
                           addItem(product)
                         }
                       }
                     }}
+                    className="w-full px-4 py-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-sm text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-primary/20"
                   >
                     <option value="">Select a product...</option>
                     {products.map(p => (
-                      <option key={p.id || p.barcode} value={p.id || p.barcode}>
-                        {p.name} - {p.category} ({p.size})
+                      <option key={p.id} value={p.id}>
+                        {p.name} - {p.barcode} (Stock: {p.stock_qty})
                       </option>
                     ))}
                   </select>
                 </div>
 
-                {/* Manual SKU Entry */}
-                <div>
-                  <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">Or Scan/Enter Item SKU</label>
+                {/* Barcode Scanner Button */}
+                <button
+                  onClick={() => setShowScanner(true)}
+                  className="mb-4 w-full flex items-center justify-center gap-2 px-4 py-3 bg-primary text-white rounded-lg font-medium hover:bg-primary/90"
+                >
+                  <span className="material-symbols-outlined">qr_code_scanner</span>
+                  Scan Barcode
+                </button>
+
+                {/* Manual Barcode Input with Add Button */}
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">Or Enter Barcode/SKU Manually</label>
                   <div className="flex gap-2">
                     <input
                       type="text"
-                      placeholder="Enter SKU/barcode manually"
+                      placeholder="Enter barcode or SKU..."
                       value={manualSKU}
                       onChange={e => setManualSKU(e.target.value)}
                       onKeyPress={e => e.key === 'Enter' && handleManualAdd()}
                       className="flex-1 px-4 py-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-sm text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-primary/20"
                     />
                     <button
-                      onClick={() => setShowScanner(true)}
-                      className="p-2 bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
+                      onClick={handleManualAdd}
+                      className="px-6 py-2 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 flex items-center gap-2"
                     >
-                      <span className="material-symbols-outlined text-zinc-600 dark:text-zinc-400">qr_code_scanner</span>
-                    </button>
-                    <button
-                      onClick={() => setShowScanner(true)}
-                      className="p-2 bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
-                    >
-                      <span className="material-symbols-outlined text-zinc-600 dark:text-zinc-400">photo_camera</span>
+                      <span className="material-symbols-outlined">add</span>
+                      Add
                     </button>
                   </div>
                 </div>
