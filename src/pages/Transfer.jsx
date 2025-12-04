@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { fetchUsers, fetchProducts, createTransfer } from '../services/api'
 import BarcodeScanner from '../components/BarcodeScanner'
+import Sidebar from '../components/Sidebar'
 
 export default function Transfer() {
   const [users, setUsers] = useState([])
@@ -8,6 +9,7 @@ export default function Transfer() {
   const [items, setItems] = useState([])
   const [toUserId, setToUserId] = useState('')
   const [showScanner, setShowScanner] = useState(false)
+  const [manualSKU, setManualSKU] = useState('')
 
   useEffect(() => {
     let mounted = true
@@ -21,6 +23,17 @@ export default function Transfer() {
     const p = products.find(x => x.barcode === code)
     if (p) addItem(p)
     else alert('Product not found')
+  }
+
+  function handleManualAdd() {
+    if (!manualSKU.trim()) return
+    const p = products.find(x => x.barcode === manualSKU || x.name?.toLowerCase().includes(manualSKU.toLowerCase()))
+    if (p) {
+      addItem(p)
+      setManualSKU('')
+    } else {
+      alert('Product not found')
+    }
   }
 
   function addItem(product) {
@@ -57,47 +70,174 @@ export default function Transfer() {
   }
 
   return (
-    <div>
+    <div className="flex min-h-screen bg-zinc-50 dark:bg-[#1c1a16]">
       {showScanner && <BarcodeScanner onScan={handleScan} onClose={() => setShowScanner(false)} />}
 
-      <div className="topbar">
-        <h2>Stock Transfer</h2>
-        <button className="btn" onClick={() => setShowScanner(true)}>Scan Barcode</button>
-      </div>
+      <Sidebar />
 
-      <div className="card" style={{ marginBottom: '1rem' }}>
-        <div className="form-row">
-          <label className="form-label">Transfer To</label>
-          <select value={toUserId} onChange={e => setToUserId(e.target.value)}>
-            <option value="">Select User</option>
-            {users.map(u => <option key={u.id} value={u.id}>{u.name} ({u.role})</option>)}
-          </select>
+      {/* Main Content */}
+      <main className="flex-1 ml-64 p-8">
+        <div className="max-w-7xl mx-auto">
+          {/* Header */}
+          <div className="mb-6">
+            <h1 className="text-3xl font-bold text-zinc-900 dark:text-white mb-2">Stock Transfer</h1>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Left Column */}
+            <div className="space-y-6">
+              {/* Select Recipient */}
+              <div className="bg-white dark:bg-[#191714] rounded-xl border border-zinc-200 dark:border-zinc-800 p-6">
+                <h2 className="text-lg font-bold text-zinc-900 dark:text-white mb-4">1. Select Recipient</h2>
+                <div>
+                  <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">Transfer To</label>
+                  <select
+                    value={toUserId}
+                    onChange={e => setToUserId(e.target.value)}
+                    className="w-full px-4 py-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-sm text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-primary/20"
+                  >
+                    <option value="">Search for a user...</option>
+                    {users.map(u => <option key={u.id} value={u.id}>{u.name} ({u.role})</option>)}
+                  </select>
+                </div>
+              </div>
+
+              {/* Add Items */}
+              <div className="bg-white dark:bg-[#191714] rounded-xl border border-zinc-200 dark:border-zinc-800 p-6">
+                <h2 className="text-lg font-bold text-zinc-900 dark:text-white mb-4">2. Add Items</h2>
+
+                {/* Product Search Dropdown */}
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">Search by Product Name</label>
+                  <select
+                    className="w-full px-4 py-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-sm text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-primary/20"
+                    value=""
+                    onChange={e => {
+                      const value = e.target.value
+                      if (value) {
+                        const product = products.find(p => (p.id || p.barcode) === value)
+                        if (product) {
+                          addItem(product)
+                        }
+                      }
+                    }}
+                  >
+                    <option value="">Select a product...</option>
+                    {products.map(p => (
+                      <option key={p.id || p.barcode} value={p.id || p.barcode}>
+                        {p.name} - {p.category} ({p.size})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Manual SKU Entry */}
+                <div>
+                  <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">Or Scan/Enter Item SKU</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="Enter SKU/barcode manually"
+                      value={manualSKU}
+                      onChange={e => setManualSKU(e.target.value)}
+                      onKeyPress={e => e.key === 'Enter' && handleManualAdd()}
+                      className="flex-1 px-4 py-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-sm text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-primary/20"
+                    />
+                    <button
+                      onClick={() => setShowScanner(true)}
+                      className="p-2 bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
+                    >
+                      <span className="material-symbols-outlined text-zinc-600 dark:text-zinc-400">qr_code_scanner</span>
+                    </button>
+                    <button
+                      onClick={() => setShowScanner(true)}
+                      className="p-2 bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
+                    >
+                      <span className="material-symbols-outlined text-zinc-600 dark:text-zinc-400">photo_camera</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column - Items for Transfer */}
+            <div className="bg-white dark:bg-[#191714] rounded-xl border border-zinc-200 dark:border-zinc-800 p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-lg font-bold text-zinc-900 dark:text-white">Items for Transfer ({items.length})</h2>
+              </div>
+
+              {items.length === 0 ? (
+                <div className="text-center py-12 text-zinc-500 dark:text-zinc-400">
+                  No items added yet
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {items.map(i => (
+                    <div key={i.id} className="flex items-center gap-4 p-4 bg-zinc-50 dark:bg-zinc-900/50 rounded-lg">
+                      <img
+                        src={i.image || 'https://via.placeholder.com/64'}
+                        alt={i.name}
+                        className="w-16 h-16 rounded object-cover"
+                      />
+                      <div className="flex-1">
+                        <div className="font-medium text-zinc-900 dark:text-white">{i.name}</div>
+                        <div className="text-sm text-zinc-500 dark:text-zinc-400">SKU: {i.barcode}</div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => updateQty(i.id, -1)}
+                          className="w-8 h-8 flex items-center justify-center bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded hover:bg-zinc-100 dark:hover:bg-zinc-700"
+                        >
+                          <span className="material-symbols-outlined text-sm">remove</span>
+                        </button>
+                        <span className="w-8 text-center font-medium text-zinc-900 dark:text-white">{i.qty}</span>
+                        <button
+                          onClick={() => updateQty(i.id, 1)}
+                          className="w-8 h-8 flex items-center justify-center bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded hover:bg-zinc-100 dark:hover:bg-zinc-700"
+                        >
+                          <span className="material-symbols-outlined text-sm">add</span>
+                        </button>
+                        <button
+                          onClick={() => removeItem(i.id)}
+                          className="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors ml-2"
+                        >
+                          <span className="material-symbols-outlined text-red-600 dark:text-red-400 text-lg">delete</span>
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+
+                  <div className="border-t border-zinc-200 dark:border-zinc-800 pt-4 mt-4">
+                    <div className="flex justify-between text-sm mb-2">
+                      <span className="text-zinc-600 dark:text-zinc-400">Total Unique Items</span>
+                      <span className="font-medium text-zinc-900 dark:text-white">{items.length}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-zinc-600 dark:text-zinc-400">Total Quantity</span>
+                      <span className="font-medium text-zinc-900 dark:text-white">{items.reduce((s, i) => s + i.qty, 0)}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-3 mt-6">
+                    <button
+                      onClick={() => setItems([])}
+                      className="flex-1 px-4 py-2 bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white rounded-lg font-medium hover:bg-zinc-200 dark:hover:bg-zinc-700"
+                    >
+                      Clear All
+                    </button>
+                    <button
+                      onClick={handleSubmit}
+                      className="flex-1 px-4 py-2 bg-primary text-white rounded-lg font-bold hover:bg-primary/90"
+                    >
+                      Confirm Transfer
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
-      </div>
-
-      <div className="card">
-        {items.length === 0 && <div className="muted">No products added. Scan barcode to add items.</div>}
-        {items.map(i => (
-          <div key={i.id} style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8, paddingBottom: 8, borderBottom: '1px solid var(--border)' }}>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontWeight: 600 }}>{i.name}</div>
-              <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>Barcode: {i.barcode}</div>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <button className="btn secondary" style={{ padding: '4px 8px' }} onClick={() => updateQty(i.id, -1)}>-</button>
-              <div style={{ minWidth: 20, textAlign: 'center' }}>{i.qty}</div>
-              <button className="btn secondary" style={{ padding: '4px 8px' }} onClick={() => updateQty(i.id, 1)}>+</button>
-              <button className="btn secondary" style={{ padding: '4px 8px', color: '#ef4444', borderColor: '#ef4444' }} onClick={() => removeItem(i.id)}>Remove</button>
-            </div>
-          </div>
-        ))}
-        {items.length > 0 && (
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 12 }}>
-            <div>Total Items: {items.length} • Total Qty: {items.reduce((s, i) => s + i.qty, 0)}</div>
-            <button className="btn" onClick={handleSubmit}>Confirm Transfer</button>
-          </div>
-        )}
-      </div>
+      </main>
     </div>
   )
 }

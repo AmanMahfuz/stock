@@ -1,5 +1,5 @@
 import React from 'react'
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import Login from './pages/Login'
 import Signup from './pages/Signup'
 import AdminDashboard from './pages/AdminDashboard'
@@ -28,10 +28,15 @@ function HomeRedirect() {
 }
 
 export default function App() {
+  const location = useLocation()
+  const isAuthPage = ['/login', '/signup'].includes(location.pathname)
+  // Hide Header and BottomNav on admin pages that use Sidebar
+  const isAdminPage = ['/admin', '/user', '/products', '/transfer', '/return', '/reports'].includes(location.pathname)
+
   return (
     <div className="app">
-      <Header />
-      <main className="main-content">
+      {!isAdminPage && !isAuthPage && <Header />}
+      <main className={!isAdminPage ? "main-content" : ""}>
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
@@ -45,7 +50,7 @@ export default function App() {
           <Route path="/" element={<HomeRedirect />} />
         </Routes>
       </main>
-      <BottomNav />
+      {!isAdminPage && !isAuthPage && <BottomNav />}
     </div>
   )
 }
