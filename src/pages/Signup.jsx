@@ -6,7 +6,6 @@ export default function Signup() {
   const [name, setName] = useState('')
   const [identifier, setIdentifier] = useState('')
   const [password, setPassword] = useState('')
-  const [role, setRole] = useState('USER')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -16,15 +15,14 @@ export default function Signup() {
     e?.preventDefault()
     setLoading(true); setError('')
     try {
-      const data = await signup({ name, email: identifier, password, role })
+      const data = await signup({ name, email: identifier, password, role: 'USER' })
       saveUser({
         token: data.token,
         role: data.role,
         name: data.name,
         id: data.id
       })
-      if (data.role === 'ADMIN') navigate('/admin')
-      else navigate('/user')
+      navigate('/user')
     } catch (err) {
       setError(err?.response?.data?.message || 'Signup failed')
     } finally { setLoading(false) }
@@ -92,14 +90,6 @@ export default function Signup() {
                   </span>
                 </button>
               </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-2">Role</label>
-              <select className="auth-input appearance-none" value={role} onChange={e => setRole(e.target.value)}>
-                <option value="USER">User (Salesman/Worker/Agent)</option>
-                <option value="ADMIN">Admin</option>
-              </select>
             </div>
 
             {error && <div className="text-red-500 text-sm">{error}</div>}
