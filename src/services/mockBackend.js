@@ -16,23 +16,27 @@ class MockBackend {
     }
 
     init() {
-        if (!localStorage.getItem('db_users')) {
-            this.saveData('db_users', initialUsers)
-            this.saveData('db_products', initialProducts)
-            this.saveData('db_transfers', initialTransfers)
-            this.saveData('db_transfer_items', initialTransferItems)
-            this.saveData('db_returns', initialReturns)
-            this.saveData('db_return_items', initialReturnItems)
-            this.saveData('db_user_transactions', initialUserTransactions)
+        // Versioning keys to force reset when schema changes
+        if (!localStorage.getItem('db_v2_users')) {
+            this.saveData('db_v2_users', initialUsers)
+            this.saveData('db_v2_products', initialProducts)
+            this.saveData('db_v2_transfers', initialTransfers)
+            this.saveData('db_v2_transfer_items', initialTransferItems)
+            this.saveData('db_v2_returns', initialReturns)
+            this.saveData('db_v2_return_items', initialReturnItems)
+            this.saveData('db_v2_user_transactions', initialUserTransactions)
         }
     }
 
     getData(key) {
-        return JSON.parse(localStorage.getItem(key) || '[]')
+        // Map old keys to new versioned keys if needed, or just use new keys
+        const versionedKey = key.replace('db_', 'db_v2_')
+        return JSON.parse(localStorage.getItem(versionedKey) || '[]')
     }
 
     saveData(key, data) {
-        localStorage.setItem(key, JSON.stringify(data))
+        const versionedKey = key.replace('db_', 'db_v2_')
+        localStorage.setItem(versionedKey, JSON.stringify(data))
     }
 
     async delay() {

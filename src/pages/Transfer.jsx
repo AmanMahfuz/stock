@@ -108,34 +108,16 @@ export default function Transfer() {
           </div>
 
           {!isAdmin && (
-            <div className="flex gap-4 mb-8 border-b border-zinc-200 dark:border-zinc-800 pb-1">
-              <button
-                onClick={() => setTransactionType('TRANSFER')}
-                className={`pb-3 px-4 text-sm font-medium transition-colors relative ${transactionType === 'TRANSFER'
-                  ? 'text-primary'
-                  : 'text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200'
-                  }`}
-              >
-                Issue to Job
-                {transactionType === 'TRANSFER' && (
-                  <div className="absolute bottom-0 left-0 w-full h-0.5 bg-primary rounded-t-full"></div>
-                )}
-              </button>
-              <button
-                onClick={() => setTransactionType('JOB_RETURN')}
-                className={`pb-3 px-4 text-sm font-medium transition-colors relative ${transactionType === 'JOB_RETURN'
-                  ? 'text-primary'
-                  : 'text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200'
-                  }`}
-              >
-                Return from Job
-                {transactionType === 'JOB_RETURN' && (
-                  <div className="absolute bottom-0 left-0 w-full h-0.5 bg-primary rounded-t-full"></div>
-                )}
-              </button>
+            <div className="mb-8">
+              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                <p className="text-blue-800 dark:text-blue-200 text-sm">
+                  <strong>Job / Sales Mode:</strong> Select products from the warehouse to take to a job site.
+                  This will add to your personal stock liability.
+                </p>
+              </div>
             </div>
           )}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 gap-6"> {/* Changed to single column for wider inputs */}
             {/* Left Column */}
             <div className="space-y-6">
               {/* Select Recipient */}
@@ -284,16 +266,12 @@ export default function Transfer() {
                     <button
                       onClick={handleSubmit}
                       className={`w-full py-4 rounded-xl font-bold text-white shadow-lg shadow-primary/20 transition-all active:scale-[0.98] ${items.length === 0
-                          ? 'bg-zinc-300 dark:bg-zinc-700 cursor-not-allowed'
-                          : 'bg-primary hover:bg-primary/90'
+                        ? 'bg-zinc-300 dark:bg-zinc-700 cursor-not-allowed'
+                        : 'bg-primary hover:bg-primary/90'
                         }`}
                       disabled={items.length === 0}
                     >
-                      {isAdmin
-                        ? 'Confirm Transfer'
-                        : transactionType === 'JOB_RETURN'
-                          ? 'Confirm Return from Job'
-                          : 'Confirm Issue to Job'}
+                      {isAdmin ? 'Confirm Transfer' : 'Confirm Job / Sale'}
                     </button>
                   </div>
                 </div>

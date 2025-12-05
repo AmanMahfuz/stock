@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { fetchProducts, createReturn, getCurrentUser } from '../services/api'
+import { fetchProducts, createReturn, getCurrentUser, fetchStaffInventory } from '../services/api'
 import Sidebar from '../components/Sidebar'
 import UserSidebar from '../components/UserSidebar'
 import BarcodeScanner from '../components/BarcodeScanner'
@@ -10,9 +10,18 @@ export default function ReturnPage() {
   const [showScanner, setShowScanner] = useState(false)
   const [manualBarcode, setManualBarcode] = useState('')
 
+  const [inventory, setInventory] = useState([])
+  const currentUser = getCurrentUser()
+
   useEffect(() => {
     let mounted = true
-    fetchProducts().then(d => mounted && setProducts(d)).catch(() => { })
+    if (currentUser) {
+      fetchStaffInventory(currentUser.id).then(d => {
+        if (mounted) {
+          setProducts(d.map(i => ({ ...i.product, stock_qty: i.quantity }))) // Map to product format but with user's qty
+        }
+      }).catch(() => { })
+    }
     return () => mounted = false
   }, [])
 
@@ -88,7 +97,7 @@ export default function ReturnPage() {
 
               {/* Product Search Dropdown */}
               <div className="mb-4">
-                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">Search by Product Name</label>
+                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">Select from Your Stock</label>
                 <select
                   className="w-full px-4 py-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-sm text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-primary/20"
                   value=""
@@ -105,7 +114,7 @@ export default function ReturnPage() {
                   <option value="">Select a product...</option>
                   {products.map(p => (
                     <option key={p.id || p.barcode} value={p.id || p.barcode}>
-                      {p.name} - {p.category} ({p.size})
+                      {p.name} - {p.category} (Your Stock: {p.stock_qty})
                     </option>
                   ))}
                 </select>
