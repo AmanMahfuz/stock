@@ -60,7 +60,6 @@ export default function Transfer() {
 
   async function handleSubmit() {
     if (isAdmin && !toUserId) return alert('Select a recipient')
-    if (!isAdmin && !customerName) return alert('Enter customer/job name')
     if (items.length === 0) return alert('Add items')
 
     try {
@@ -70,13 +69,29 @@ export default function Transfer() {
           items: items.map(i => ({ productId: i.id, qty: i.qty }))
         })
       } else {
-        await client.post('/user-transactions', {
-          items: items.map(i => ({ productId: i.id, qty: i.qty })),
-          customer_name: customerName,
-          type: transactionType
-        })
+        // User taking stock from warehouse
+        if (transactionType === 'TRANSFER') {
+          await client.post('/take-stock', {
+            items: items.map(i => ({ productId: i.id, qty: i.qty }))
+          })
+        } else {
+          // Return from Job (Customer -> User) - Keep existing logic or remove if redundant?
+          // User request says "transfer mean this much product taken and in return page show the products transfer"
+          // The 'Return' page is User -> Warehouse.
+          // This 'Job Return' button on Transfer page might be confusing now.
+          // But let's keep it if they want to track returns from a specific job site back to their truck?
+          // Actually, the user said "return page show the products transfer and in their the user can put the stock qty that to return".
+          // This implies the 'Return' page is the main place for returns.
+          // The 'Job Return' on Transfer page was 'Customer -> User'.
+          // I will leave it for now but the main request is about 'Taking'.
+          await client.post('/user-transactions', {
+            items: items.map(i => ({ productId: i.id, qty: i.qty })),
+            customer_name: customerName || 'Self',
+            type: transactionType
+          })
+        }
       }
-      alert(transactionType === 'JOB_RETURN' ? '✅ Return from Job recorded!' : '✅ Job Issue recorded!')
+      alert(transactionType === 'JOB_RETURN' ? '✅ Return from Job recorded!' : '✅ Stock Taken from Warehouse!')
       setItems([])
       setToUserId('')
       setCustomerName('')
@@ -120,25 +135,27 @@ export default function Transfer() {
           <div className="grid grid-cols-1 gap-6"> {/* Changed to single column for wider inputs */}
             {/* Left Column */}
             <div className="space-y-6">
-              {/* Select Recipient */}
-              <div className="bg-white dark:bg-[#191714] rounded-xl border border-zinc-200 dark:border-zinc-800 p-6">
-                <h2 className="text-lg font-bold text-zinc-900 dark:text-white mb-4">1. Select Recipient</h2>
-                <div>
-                  <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">Transfer To</label>
-                  <select
-                    value={toUserId}
-                    onChange={e => setToUserId(e.target.value)}
-                    className="w-full px-4 py-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-sm text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-primary/20"
-                  >
-                    <option value="">Search for a user...</option>
-                    {users.map(u => <option key={u.id} value={u.id}>{u.name} ({u.role})</option>)}
-                  </select>
+              {/* Select Recipient - ADMIN ONLY */}
+              {isAdmin && (
+                <div className="bg-white dark:bg-[#191714] rounded-xl border border-zinc-200 dark:border-zinc-800 p-6">
+                  <h2 className="text-lg font-bold text-zinc-900 dark:text-white mb-4">1. Select Recipient</h2>
+                  <div>
+                    <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">Transfer To</label>
+                    <select
+                      value={toUserId}
+                      onChange={e => setToUserId(e.target.value)}
+                      className="w-full px-4 py-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-sm text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-primary/20"
+                    >
+                      <option value="">Search for a user...</option>
+                      {users.map(u => <option key={u.id} value={u.id}>{u.name} ({u.role})</option>)}
+                    </select>
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Add Items */}
               <div className="bg-white dark:bg-[#191714] rounded-xl border border-zinc-200 dark:border-zinc-800 p-6">
-                <h2 className="text-lg font-bold text-zinc-900 dark:text-white mb-4">2. Add Items</h2>
+                <h2 className="text-lg font-bold text-zinc-900 dark:text-white mb-4">{isAdmin ? '2.' : '1.'} Add Items</h2>
 
                 {/* Product Search Dropdown */}
                 <div className="mb-4">
@@ -227,7 +244,16 @@ export default function Transfer() {
                         >
                           <span className="material-symbols-outlined text-sm">remove</span>
                         </button>
-                        <span className="w-8 text-center font-medium text-zinc-900 dark:text-white">{i.qty}</span>
+                        <input
+                          type="number"
+                          min="1"
+                          value={i.qty}
+                          onChange={e => {
+                            const val = parseInt(e.target.value) || 1
+                            setItems(prev => prev.map(item => item.id === i.id ? { ...item, qty: Math.max(1, val) } : item))
+                          }}
+                          className="w-16 text-center font-medium text-zinc-900 dark:text-white bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded px-2 py-1 outline-none focus:ring-2 focus:ring-primary/20"
+                        />
                         <button
                           onClick={() => updateQty(i.id, 1)}
                           className="w-8 h-8 flex items-center justify-center bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded hover:bg-zinc-100 dark:hover:bg-zinc-700"
@@ -258,20 +284,19 @@ export default function Transfer() {
                   <div className="flex gap-3 mt-6">
                     <button
                       onClick={() => setItems([])}
-                      className="flex-1 px-4 py-2 bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white rounded-lg font-medium hover:bg-zinc-200 dark:hover:bg-zinc-700"
+                      className="flex-1 px-4 py-3 bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white rounded-lg font-medium hover:bg-zinc-200 dark:hover:bg-zinc-700"
                     >
                       Clear All
                     </button>
-                    {/* Submit Button */}
                     <button
                       onClick={handleSubmit}
-                      className={`w-full py-4 rounded-xl font-bold text-white shadow-lg shadow-primary/20 transition-all active:scale-[0.98] ${items.length === 0
+                      className={`flex-1 px-4 py-3 rounded-lg font-bold text-white transition-all active:scale-[0.98] ${items.length === 0
                         ? 'bg-zinc-300 dark:bg-zinc-700 cursor-not-allowed'
                         : 'bg-primary hover:bg-primary/90'
                         }`}
                       disabled={items.length === 0}
                     >
-                      {isAdmin ? 'Confirm Transfer' : 'Confirm Job / Sale'}
+                      {isAdmin ? 'Confirm Transfer' : 'Confirm Take Stock'}
                     </button>
                   </div>
                 </div>

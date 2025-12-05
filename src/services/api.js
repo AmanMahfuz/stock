@@ -36,6 +36,7 @@ const client = {
     if (url === '/signup') return { data: await mockBackend.signup(data) }
     if (url === '/products') return { data: await mockBackend.addProduct(data) }
     if (url === '/transfers') return { data: await mockBackend.createTransfer(data) }
+    if (url === '/take-stock') return { data: await mockBackend.takeStock(data, user) }
     if (url === '/user-transactions') return { data: await mockBackend.createUserTransaction(data, user) }
     if (url === '/returns') return { data: await mockBackend.createReturn(data, user) }
 

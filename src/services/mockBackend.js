@@ -17,25 +17,26 @@ class MockBackend {
 
     init() {
         // Versioning keys to force reset when schema changes
-        if (!localStorage.getItem('db_v2_users')) {
-            this.saveData('db_v2_users', initialUsers)
-            this.saveData('db_v2_products', initialProducts)
-            this.saveData('db_v2_transfers', initialTransfers)
-            this.saveData('db_v2_transfer_items', initialTransferItems)
-            this.saveData('db_v2_returns', initialReturns)
-            this.saveData('db_v2_return_items', initialReturnItems)
-            this.saveData('db_v2_user_transactions', initialUserTransactions)
+        if (!localStorage.getItem('db_v5_users')) {
+            console.log('Initializing V5 DB...')
+            this.saveData('db_users', initialUsers)
+            this.saveData('db_products', initialProducts)
+            this.saveData('db_transfers', initialTransfers)
+            this.saveData('db_transfer_items', initialTransferItems)
+            this.saveData('db_returns', initialReturns)
+            this.saveData('db_return_items', initialReturnItems)
+            this.saveData('db_user_transactions', initialUserTransactions)
         }
     }
 
     getData(key) {
         // Map old keys to new versioned keys if needed, or just use new keys
-        const versionedKey = key.replace('db_', 'db_v2_')
+        const versionedKey = key.replace('db_', 'db_v5_')
         return JSON.parse(localStorage.getItem(versionedKey) || '[]')
     }
 
     saveData(key, data) {
-        const versionedKey = key.replace('db_', 'db_v2_')
+        const versionedKey = key.replace('db_', 'db_v5_')
         localStorage.setItem(versionedKey, JSON.stringify(data))
     }
 
@@ -58,9 +59,9 @@ class MockBackend {
         const returnItems = this.getData('db_return_items')
         const userTransactions = this.getData('db_user_transactions')
 
-        // Admin -> User (In)
+        // Admin -> User (In) - Fixed to use to_user_id
         const receivedQty = transfers
-            .filter(t => t.staff_id === parseInt(staffId))
+            .filter(t => t.to_user_id === parseInt(staffId))
             .flatMap(t => transferItems.filter(ti => ti.transfer_id === t.id))
             .filter(i => i.product_id === parseInt(productId))
             .reduce((sum, i) => sum + i.qty, 0)
@@ -82,7 +83,17 @@ class MockBackend {
             .filter(t => t.user_id === parseInt(staffId) && t.product_id === parseInt(productId) && t.type === 'JOB_RETURN')
             .reduce((sum, t) => sum + t.quantity, 0)
 
-        return receivedQty - returnedQty - soldQty + jobReturnQty
+        const balance = receivedQty - returnedQty - soldQty + jobReturnQty
+
+        console.log(`Staff ${staffId} Product ${productId}:`, {
+            receivedQty,
+            returnedQty,
+            soldQty,
+            jobReturnQty,
+            balance
+        })
+
+        return balance
     }
 
     getStaffInventory(staffId) {
@@ -137,9 +148,16 @@ class MockBackend {
         await this.delay()
         const users = this.getData('db_users')
         // Check against email
-        const user = users.find(u => u.email === identifier && u.password === password)
+        const user = users.find(u => u.email === identifier.trim() && u.password === password.trim())
 
-        if (!user) throw { response: { data: { message: 'Invalid credentials' } } }
+        if (!user) {
+            if (identifier.trim() === 'admin') {
+                throw { response: { data: { message: 'Please use email: admin@example.com' } } }
+            }
+            console.log('Login failed. Users in DB:', users)
+            console.log('Attempted:', identifier, password)
+            throw { response: { data: { message: 'Invalid email or password' } } }
+        }
 
         user.token = this.makeToken()
         this.saveData('db_users', users)
@@ -265,6 +283,15 @@ class MockBackend {
         return { success: true, transferId }
     }
 
+    async takeStock(data, currentUser) { // { items: [{productId, qty}] }
+        await this.delay()
+        // Re-use createTransfer logic but acting as self
+        return this.createTransfer({
+            toUserId: currentUser.id,
+            items: data.items
+        })
+    }
+
     // ========================================
     // USER TRANSACTIONS (Job Issue / Return)
     // ========================================
@@ -302,20 +329,34 @@ class MockBackend {
 
     async getUserTransactions(currentUser) {
         await this.delay()
-        const userTransactions = this.getData('db_user_transactions')
+        const transfers = this.getData('db_transfers')
+        const transferItems = this.getData('db_transfer_items')
         const products = this.getData('db_products')
 
-        return userTransactions
-            .filter(ut => ut.user_id === currentUser.id)
-            .map(ut => {
-                const product = products.find(p => p.id === ut.product_id)
-                return {
-                    ...ut,
+        // Get all transfers where user is the recipient
+        const userTransfers = transfers.filter(t => t.to_user_id === currentUser.id)
+
+        // Map transfer items to transactions
+        const transactions = []
+        userTransfers.forEach(transfer => {
+            const items = transferItems.filter(ti => ti.transfer_id === transfer.id)
+            items.forEach(item => {
+                const product = products.find(p => p.id === item.product_id)
+                transactions.push({
+                    id: item.id,
+                    transfer_id: transfer.id,
+                    user_id: currentUser.id,
+                    product_id: item.product_id,
                     product_name: product?.name,
-                    product_barcode: product?.barcode
-                }
+                    product_barcode: product?.barcode,
+                    quantity: item.qty,
+                    type: 'TRANSFER',
+                    created_at: transfer.created_at
+                })
             })
-            .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+        })
+
+        return transactions.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
     }
 
     // ========================================
