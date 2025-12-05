@@ -1,34 +1,75 @@
-import axios from 'axios'
+import { mockBackend } from './mockBackend'
 
-// In Vite (browser) use `import.meta.env`; `process` is not defined in the browser.
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:4000/api'
+// ==========================================
+// MOCK CLIENT ADAPTER (Replaces Axios)
+// ==========================================
 
-const client = axios.create({ baseURL: API_BASE })
+const client = {
+  defaults: { headers: { common: {} } },
 
-// If a user token was persisted in localStorage from a previous session,
-// attach it so requests include Authorization header by default.
-try {
-  const saved = JSON.parse(localStorage.getItem('tsm_user'))
-  if (saved?.token) client.defaults.headers.common['Authorization'] = `Bearer ${saved.token}`
-} catch (e) {/* ignore */ }
+  get: async (url) => {
+    const user = getCurrentUser()
 
-export async function login(credentials) {
-  const res = await client.post('/login', credentials)
-  return res.data
+    if (url === '/products') return { data: await mockBackend.getProducts() }
+    if (url === '/users') return { data: await mockBackend.getUsers() }
+    if (url === '/stats') return { data: await mockBackend.getStats() }
+    if (url === '/user-stats') return { data: await mockBackend.getUserStats(user) }
+    if (url === '/user-transactions') return { data: await mockBackend.getUserTransactions(user) }
+
+    if (url.startsWith('/reports/')) {
+      const type = url.split('/reports/')[1]
+      return { data: await mockBackend.getReport(type) }
+    }
+
+    if (url.startsWith('/staff-inventory/')) {
+      const staffId = url.split('/staff-inventory/')[1]
+      return { data: await mockBackend.getStaffInventoryApi(staffId) }
+    }
+
+    throw new Error(`Mock 404: ${url}`)
+  },
+
+  post: async (url, data) => {
+    const user = getCurrentUser()
+
+    if (url === '/login') return { data: await mockBackend.login(data.identifier, data.password) }
+    if (url === '/signup') return { data: await mockBackend.signup(data) }
+    if (url === '/products') return { data: await mockBackend.addProduct(data) }
+    if (url === '/transfers') return { data: await mockBackend.createTransfer(data) }
+    if (url === '/user-transactions') return { data: await mockBackend.createUserTransaction(data, user) }
+    if (url === '/returns') return { data: await mockBackend.createReturn(data, user) }
+
+    throw new Error(`Mock 404: ${url}`)
+  },
+
+  put: async (url, data) => {
+    if (url.startsWith('/products/')) {
+      const id = url.split('/products/')[1]
+      return { data: await mockBackend.updateProduct(id, data) }
+    }
+    throw new Error(`Mock 404: ${url}`)
+  },
+
+  delete: async (url) => {
+    if (url.startsWith('/products/')) {
+      const id = url.split('/products/')[1]
+      return { data: await mockBackend.deleteProduct(id) }
+    }
+    throw new Error(`Mock 404: ${url}`)
+  }
 }
 
-export async function signup(payload) {
-  const res = await client.post('/signup', payload)
-  return res.data
-}
+// ==========================================
+// AUTH HELPERS
+// ==========================================
 
 export function setToken(token) {
+  // No-op for mock, but kept for compatibility
   if (token) client.defaults.headers.common['Authorization'] = `Bearer ${token}`
   else delete client.defaults.headers.common['Authorization']
 }
 
 export function saveUser(data) {
-  // Save complete user data: token, role, name, id
   localStorage.setItem('tsm_user', JSON.stringify({
     token: data.token,
     role: data.role,
@@ -49,59 +90,64 @@ export function logout() {
   setToken(null)
 }
 
+// ==========================================
+// EXPORTED API FUNCTIONS
+// ==========================================
+
+export async function login(credentials) {
+  return (await client.post('/login', credentials)).data
+}
+
+export async function signup(payload) {
+  return (await client.post('/signup', payload)).data
+}
+
 export async function fetchProducts() {
-  const res = await client.get('/products')
-  return res.data
+  return (await client.get('/products')).data
 }
 
 export async function getDashboardStats() {
-  const res = await client.get('/stats')
-  return res.data
+  return (await client.get('/stats')).data
 }
 
 export async function createProduct(payload) {
-  const res = await client.post('/products', payload)
-  return res.data
+  return (await client.post('/products', payload)).data
 }
 
 export async function updateProduct(id, payload) {
-  const res = await client.put(`/products/${id}`, payload)
-  return res.data
+  return (await client.put(`/products/${id}`, payload)).data
 }
 
 export async function deleteProduct(id) {
-  const res = await client.delete(`/products/${id}`)
-  return res.data
+  return (await client.delete(`/products/${id}`)).data
 }
 
 export async function fetchUsers() {
-  const res = await client.get('/users')
-  return res.data
+  return (await client.get('/users')).data
 }
 
 export async function createTransfer(payload) {
-  const res = await client.post('/transfers', payload)
-  return res.data
+  return (await client.post('/transfers', payload)).data
 }
 
 export async function createReturn(payload) {
-  const res = await client.post('/returns', payload)
-  return res.data
+  return (await client.post('/returns', payload)).data
 }
 
 export async function createUserTransaction(payload) {
-  const res = await client.post('/user-transactions', payload)
-  return res.data
+  return (await client.post('/user-transactions', payload)).data
 }
 
 export async function getUserTransactions() {
-  const res = await client.get('/user-transactions')
-  return res.data
+  return (await client.get('/user-transactions')).data
 }
 
 export async function getUserStats() {
-  const res = await client.get('/user-stats')
-  return res.data
+  return (await client.get('/user-stats')).data
+}
+
+export async function fetchStaffInventory(staffId) {
+  return (await client.get(`/staff-inventory/${staffId}`)).data
 }
 
 export default client

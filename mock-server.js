@@ -49,29 +49,35 @@ function makeToken() {
 }
 
 // Calculate staff stock for a specific product
-function getStaffStockForProduct(staffId, productId) {
-  // Get all transfers to this staff for this product
-  const transferredQty = transfer_items
-    .filter(ti => {
-      const transfer = transfers.find(t => t.id === ti.transfer_id)
-      return transfer && transfer.staff_id === staffId && ti.product_id === productId
-    })
-    .reduce((sum, ti) => sum + ti.qty, 0)
+const getStaffStockForProduct = (staffId, productId) => {
+  const staffTransfers = transfers.flatMap(t => t.items)
+    .filter(i => t => t.toUserId === parseInt(staffId) && i.productId === parseInt(productId))
 
-  // Get all returns from this staff for this product
-  const returnedQty = return_items
-    .filter(ri => {
-      const returnRecord = returns.find(r => r.id === ri.return_id)
-      return returnRecord && returnRecord.staff_id === staffId && ri.product_id === productId
-    })
-    .reduce((sum, ri) => sum + ri.qty, 0)
+  // Admin -> User (In)
+  const receivedQty = transfers
+    .filter(t => t.toUserId === parseInt(staffId))
+    .flatMap(t => t.items)
+    .filter(i => i.productId === parseInt(productId))
+    .reduce((sum, i) => sum + i.qty, 0)
 
-  // Get user-to-customer transfers (reduces user stock)
-  const userTransferredQty = user_transactions
-    .filter(ut => ut.user_id === staffId && ut.product_id === productId && ut.type === 'TRANSFER')
-    .reduce((sum, ut) => sum + ut.quantity, 0)
+  // User -> Warehouse (Out)
+  const returnedQty = returns
+    .filter(r => r.userId === parseInt(staffId))
+    .flatMap(r => r.items)
+    .filter(i => i.productId === parseInt(productId))
+    .reduce((sum, i) => sum + i.qty, 0)
 
-  return transferredQty - returnedQty - userTransferredQty
+  // User -> Customer (Out)
+  const soldQty = user_transactions
+    .filter(t => t.user_id === parseInt(staffId) && t.product_id === parseInt(productId) && t.type === 'TRANSFER')
+    .reduce((sum, t) => sum + t.quantity, 0)
+
+  // Customer -> User (In - Return from Job)
+  const jobReturnQty = user_transactions
+    .filter(t => t.user_id === parseInt(staffId) && t.product_id === parseInt(productId) && t.type === 'JOB_RETURN')
+    .reduce((sum, t) => sum + t.quantity, 0)
+
+  return receivedQty - returnedQty - soldQty + jobReturnQty
 }
 
 // Get full inventory for a staff member
@@ -259,37 +265,37 @@ app.post('/api/transfers', (req, res) => {
 // ========================================
 
 app.post('/api/user-transactions', (req, res) => {
-  const { items, customer_name } = req.body // items: [{productId, qty}]
+  const { items, customer_name, type } = req.body // items: [{productId, qty}], type: 'TRANSFER' or 'JOB_RETURN'
   const token = req.headers.authorization?.split(' ')[1]
   const user = users.find(u => u.token === token)
   if (!user) return res.status(401).json({ message: 'Unauthorized' })
 
-  // ✅ VALIDATION: Check if user has sufficient stock
-  for (const item of items) {
-    const availableQty = getStaffStockForProduct(user.id, item.productId)
-
-    if (item.qty > availableQty) {
-      const product = products.find(p => p.id === item.productId)
-      return res.status(400).json({
-        message: `Insufficient stock for ${product?.name}. You have ${availableQty}, requested ${item.qty}`
-      })
+  // Validation for TRANSFER (Outbound)
+  if (!type || type === 'TRANSFER') {
+    for (const item of items) {
+      const availableQty = getStaffStockForProduct(user.id, item.productId)
+      if (item.qty > availableQty) {
+        const product = products.find(p => p.id === item.productId)
+        return res.status(400).json({
+          message: `Insufficient stock for ${product?.name}. You have ${availableQty}, requested ${item.qty}`
+        })
+      }
     }
   }
 
-  // Create user transactions
-  items.forEach(item => {
-    user_transactions.push({
-      id: user_transactions.length + 1,
-      user_id: user.id,
-      product_id: item.productId,
-      quantity: item.qty,
-      type: 'TRANSFER',
-      customer_name: customer_name || 'Customer',
-      created_at: new Date()
-    })
-  })
+  // Create transactions
+  const newTransactions = items.map(item => ({
+    id: user_transactions.length + 1 + Math.random(), // simple unique id
+    user_id: user.id,
+    product_id: item.productId,
+    quantity: item.qty,
+    type: type || 'TRANSFER',
+    customer_name: customer_name || 'Customer',
+    created_at: new Date()
+  }))
 
-  return res.json({ success: true })
+  user_transactions.push(...newTransactions)
+  res.json({ success: true, transactions: newTransactions })
 })
 
 // Get user transaction history

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { fetchUsers, fetchProducts, createTransfer, getCurrentUser } from '../services/api'
+import client, { fetchUsers, fetchProducts, createTransfer, getCurrentUser } from '../services/api'
 import Sidebar from '../components/Sidebar'
 import UserSidebar from '../components/UserSidebar'
 import BarcodeScanner from '../components/BarcodeScanner'
@@ -9,8 +9,13 @@ export default function Transfer() {
   const [products, setProducts] = useState([])
   const [items, setItems] = useState([])
   const [toUserId, setToUserId] = useState('')
+  const [customerName, setCustomerName] = useState('')
   const [showScanner, setShowScanner] = useState(false)
   const [manualSKU, setManualSKU] = useState('')
+  const [transactionType, setTransactionType] = useState('TRANSFER') // 'TRANSFER' (Issue) or 'JOB_RETURN' (Return from Job)
+
+  const currentUser = getCurrentUser()
+  const isAdmin = currentUser?.role === 'ADMIN'
 
   useEffect(() => {
     let mounted = true
@@ -54,21 +59,30 @@ export default function Transfer() {
   }
 
   async function handleSubmit() {
-    if (!toUserId) return alert('Select a recipient')
-    if (items.length === 0) return alert('Add items to transfer')
+    if (isAdmin && !toUserId) return alert('Select a recipient')
+    if (!isAdmin && !customerName) return alert('Enter customer/job name')
+    if (items.length === 0) return alert('Add items')
 
     try {
-      await createTransfer({
-        toUserId,
-        items: items.map(i => ({ productId: i.id, qty: i.qty }))
-      })
-      alert('✅ Transfer successful!')
+      if (isAdmin) {
+        await createTransfer({
+          toUserId,
+          items: items.map(i => ({ productId: i.id, qty: i.qty }))
+        })
+      } else {
+        await client.post('/user-transactions', {
+          items: items.map(i => ({ productId: i.id, qty: i.qty })),
+          customer_name: customerName,
+          type: transactionType
+        })
+      }
+      alert(transactionType === 'JOB_RETURN' ? '✅ Return from Job recorded!' : '✅ Job Issue recorded!')
       setItems([])
       setToUserId('')
+      setCustomerName('')
     } catch (e) {
-      // Show specific error message from backend
-      const errorMessage = e.response?.data?.message || e.message || 'Transfer failed'
-      alert(`❌ ${errorMessage} `)
+      const errorMessage = e.response?.data?.message || e.message || 'Transaction failed'
+      alert(`❌ ${errorMessage}`)
     }
   }
 
@@ -77,16 +91,50 @@ export default function Transfer() {
       {showScanner && <BarcodeScanner onScan={handleScan} onClose={() => setShowScanner(false)} />}
 
       {/* Conditional Sidebar based on role */}
-      {getCurrentUser()?.role === 'ADMIN' ? <Sidebar /> : <UserSidebar />}
+      {isAdmin ? <Sidebar /> : <UserSidebar />}
 
       {/* Main Content */}
       <main className="flex-1 ml-64 p-8">
-        <div className="max-w-7xl mx-auto">
-          {/* Header */}
-          <div className="mb-6">
-            <h1 className="text-3xl font-bold text-zinc-900 dark:text-white mb-2">Stock Transfer</h1>
+        <div className="max-w-4xl mx-auto">
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-zinc-900 dark:text-white mb-2">
+              {isAdmin ? 'Transfer Stock' : 'Job / Sales Management'}
+            </h1>
+            <p className="text-zinc-500 dark:text-zinc-400">
+              {isAdmin
+                ? 'Move stock from warehouse to staff'
+                : 'Manage stock issued to jobs or returned from sites'}
+            </p>
           </div>
 
+          {!isAdmin && (
+            <div className="flex gap-4 mb-8 border-b border-zinc-200 dark:border-zinc-800 pb-1">
+              <button
+                onClick={() => setTransactionType('TRANSFER')}
+                className={`pb-3 px-4 text-sm font-medium transition-colors relative ${transactionType === 'TRANSFER'
+                  ? 'text-primary'
+                  : 'text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200'
+                  }`}
+              >
+                Issue to Job
+                {transactionType === 'TRANSFER' && (
+                  <div className="absolute bottom-0 left-0 w-full h-0.5 bg-primary rounded-t-full"></div>
+                )}
+              </button>
+              <button
+                onClick={() => setTransactionType('JOB_RETURN')}
+                className={`pb-3 px-4 text-sm font-medium transition-colors relative ${transactionType === 'JOB_RETURN'
+                  ? 'text-primary'
+                  : 'text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200'
+                  }`}
+              >
+                Return from Job
+                {transactionType === 'JOB_RETURN' && (
+                  <div className="absolute bottom-0 left-0 w-full h-0.5 bg-primary rounded-t-full"></div>
+                )}
+              </button>
+            </div>
+          )}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Left Column */}
             <div className="space-y-6">
@@ -232,11 +280,20 @@ export default function Transfer() {
                     >
                       Clear All
                     </button>
+                    {/* Submit Button */}
                     <button
                       onClick={handleSubmit}
-                      className="flex-1 px-4 py-2 bg-primary text-white rounded-lg font-bold hover:bg-primary/90"
+                      className={`w-full py-4 rounded-xl font-bold text-white shadow-lg shadow-primary/20 transition-all active:scale-[0.98] ${items.length === 0
+                          ? 'bg-zinc-300 dark:bg-zinc-700 cursor-not-allowed'
+                          : 'bg-primary hover:bg-primary/90'
+                        }`}
+                      disabled={items.length === 0}
                     >
-                      Confirm Transfer
+                      {isAdmin
+                        ? 'Confirm Transfer'
+                        : transactionType === 'JOB_RETURN'
+                          ? 'Confirm Return from Job'
+                          : 'Confirm Issue to Job'}
                     </button>
                   </div>
                 </div>

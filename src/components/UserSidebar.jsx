@@ -38,8 +38,8 @@ export default function UserSidebar() {
                 <Link
                     to="/user"
                     className={`flex items-center gap-3 px-3 py-2 rounded-lg ${isActive('/user')
-                            ? 'bg-primary/10 text-primary dark:bg-primary/20'
-                            : 'hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-800 dark:text-zinc-200'
+                        ? 'bg-primary/10 text-primary dark:bg-primary/20'
+                        : 'hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-800 dark:text-zinc-200'
                         }`}
                 >
                     <span className="material-symbols-outlined">dashboard</span>
@@ -48,18 +48,18 @@ export default function UserSidebar() {
                 <Link
                     to="/transfer"
                     className={`flex items-center gap-3 px-3 py-2 rounded-lg ${isActive('/transfer')
-                            ? 'bg-primary/10 text-primary dark:bg-primary/20'
-                            : 'hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-800 dark:text-zinc-200'
+                        ? 'bg-primary/10 text-primary dark:bg-primary/20'
+                        : 'hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-800 dark:text-zinc-200'
                         }`}
                 >
                     <span className="material-symbols-outlined">sync_alt</span>
-                    <span className="text-sm font-medium">Transfer to Customer</span>
+                    <span className="text-sm font-medium">Job / Sales</span>
                 </Link>
                 <Link
                     to="/return"
                     className={`flex items-center gap-3 px-3 py-2 rounded-lg ${isActive('/return')
-                            ? 'bg-primary/10 text-primary dark:bg-primary/20'
-                            : 'hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-800 dark:text-zinc-200'
+                        ? 'bg-primary/10 text-primary dark:bg-primary/20'
+                        : 'hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-800 dark:text-zinc-200'
                         }`}
                 >
                     <span className="material-symbols-outlined">keyboard_return</span>
@@ -68,8 +68,8 @@ export default function UserSidebar() {
                 <Link
                     to="/transactions"
                     className={`flex items-center gap-3 px-3 py-2 rounded-lg ${isActive('/transactions')
-                            ? 'bg-primary/10 text-primary dark:bg-primary/20'
-                            : 'hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-800 dark:text-zinc-200'
+                        ? 'bg-primary/10 text-primary dark:bg-primary/20'
+                        : 'hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-800 dark:text-zinc-200'
                         }`}
                 >
                     <span className="material-symbols-outlined">history</span>

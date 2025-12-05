@@ -1,9 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { getCurrentUser, logout, getUserStats } from '../services/api'
-import axios from 'axios'
-
-const API_URL = 'http://localhost:4000/api'
+import { getCurrentUser, logout, getUserStats, fetchStaffInventory } from '../services/api'
 
 export default function UserDashboard() {
   const navigate = useNavigate()
@@ -30,12 +27,9 @@ export default function UserDashboard() {
       })
 
       // Fetch staff inventory
-      const token = localStorage.getItem('token')
-      const response = await axios.get(`${API_URL}/staff-inventory/${user.id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      })
+      const data = await fetchStaffInventory(user.id)
 
-      setInventory(response.data.map(item => ({
+      setInventory(data.map(item => ({
         id: item.product_id,
         name: item.product?.name || 'Unknown Product',
         category: item.product?.category || '',
