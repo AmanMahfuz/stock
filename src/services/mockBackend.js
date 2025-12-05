@@ -132,7 +132,8 @@ class MockBackend {
     async login(identifier, password) {
         await this.delay()
         const users = this.getData('db_users')
-        const user = users.find(u => u.mobile === identifier && u.password === password)
+        // Check against email
+        const user = users.find(u => u.email === identifier && u.password === password)
 
         if (!user) throw { response: { data: { message: 'Invalid credentials' } } }
 
@@ -145,7 +146,7 @@ class MockBackend {
     async signup(data) {
         await this.delay()
         const users = this.getData('db_users')
-        if (users.find(u => u.mobile === data.mobile)) {
+        if (users.find(u => u.email === data.email)) {
             throw { response: { data: { message: 'User exists' } } }
         }
 
@@ -211,7 +212,7 @@ class MockBackend {
 
     async getUsers() {
         await this.delay()
-        return this.getData('db_users').map(u => ({ id: u.id, name: u.name, role: u.role, mobile: u.mobile }))
+        return this.getData('db_users').map(u => ({ id: u.id, name: u.name, role: u.role, email: u.email }))
     }
 
     // ========================================

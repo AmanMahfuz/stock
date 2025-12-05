@@ -16,7 +16,7 @@ export default function Signup() {
     e?.preventDefault()
     setLoading(true); setError('')
     try {
-      const data = await signup({ name, mobile, password, role })
+      const data = await signup({ name, email: identifier, password, role })
       saveUser({
         token: data.token,
         role: data.role,

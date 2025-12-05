@@ -2,7 +2,7 @@ export const initialUsers = [
     {
         id: 1,
         name: 'Admin User',
-        mobile: 'admin',
+        email: 'admin@example.com',
         password: 'admin',
         role: 'ADMIN',
         created_at: new Date().toISOString()
