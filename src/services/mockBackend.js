@@ -59,9 +59,9 @@ class MockBackend {
         const returnItems = this.getData('db_return_items')
         const userTransactions = this.getData('db_user_transactions')
 
-        // Admin -> User (In) - Fixed to use to_user_id
+        // Admin -> User (In) - Fixed to use to_user_id or staff_id (legacy)
         const receivedQty = transfers
-            .filter(t => t.to_user_id === parseInt(staffId))
+            .filter(t => (t.to_user_id === parseInt(staffId)) || (t.staff_id === parseInt(staffId)))
             .flatMap(t => transferItems.filter(ti => ti.transfer_id === t.id))
             .filter(i => i.product_id === parseInt(productId))
             .reduce((sum, i) => sum + i.qty, 0)
@@ -108,7 +108,7 @@ class MockBackend {
         // Add transfers
         transferItems.forEach(ti => {
             const transfer = transfers.find(t => t.id === ti.transfer_id)
-            if (transfer && transfer.staff_id === staffId) {
+            if (transfer && ((transfer.to_user_id === staffId) || (transfer.staff_id === staffId))) {
                 inventory[ti.product_id] = (inventory[ti.product_id] || 0) + ti.qty
             }
         })
@@ -260,7 +260,8 @@ class MockBackend {
         const transferId = transfers.length + 1
         transfers.push({
             id: transferId,
-            staff_id: parseInt(data.toUserId),
+            to_user_id: parseInt(data.toUserId), // Changed from staff_id to to_user_id
+            customer_name: data.customer_name || '',
             created_at: new Date().toISOString()
         })
 
@@ -283,12 +284,13 @@ class MockBackend {
         return { success: true, transferId }
     }
 
-    async takeStock(data, currentUser) { // { items: [{productId, qty}] }
+    async takeStock(data, currentUser) { // { items: [{productId, qty}], customer_name }
         await this.delay()
         // Re-use createTransfer logic but acting as self
         return this.createTransfer({
             toUserId: currentUser.id,
-            items: data.items
+            items: data.items,
+            customer_name: data.customer_name
         })
     }
 
@@ -351,6 +353,7 @@ class MockBackend {
                     product_barcode: product?.barcode,
                     quantity: item.qty,
                     type: 'TRANSFER',
+                    customer_name: transfer.customer_name, // Add customer name
                     created_at: transfer.created_at
                 })
             })

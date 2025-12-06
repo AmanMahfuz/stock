@@ -10,6 +10,7 @@ import ReturnPage from './pages/Return'
 import Profile from './pages/Profile'
 import Reports from './pages/Reports'
 import Transactions from './pages/Transactions'
+import Catalog from './pages/Catalog'
 import Header from './components/Header'
 import BottomNav from './components/BottomNav'
 import { getCurrentUser } from './services/api'
@@ -32,7 +33,7 @@ export default function App() {
   const location = useLocation()
   const isAuthPage = ['/login', '/signup'].includes(location.pathname)
   // Hide Header and BottomNav on admin pages that use Sidebar
-  const isAdminPage = ['/admin', '/user', '/products', '/transfer', '/return', '/reports', '/transactions'].includes(location.pathname)
+  const isAdminPage = ['/admin', '/user', '/products', '/transfer', '/return', '/reports', '/transactions', '/catalog'].includes(location.pathname)
 
   return (
     <div className="app">
@@ -43,6 +44,7 @@ export default function App() {
           <Route path="/signup" element={<Signup />} />
           <Route path="/admin" element={<RequireAuth roles={["ADMIN"]}><AdminDashboard /></RequireAuth>} />
           <Route path="/user" element={<RequireAuth roles={["USER", "SALES", "USER"]}><UserDashboard /></RequireAuth>} />
+          <Route path="/catalog" element={<RequireAuth roles={["USER", "SALES"]}><Catalog /></RequireAuth>} />
           <Route path="/products" element={<RequireAuth roles={["ADMIN"]}><Products /></RequireAuth>} />
           <Route path="/transfer" element={<RequireAuth roles={["ADMIN", "USER", "SALES"]}><Transfer /></RequireAuth>} />
           <Route path="/return" element={<RequireAuth roles={["ADMIN", "USER", "SALES"]}><ReturnPage /></RequireAuth>} />

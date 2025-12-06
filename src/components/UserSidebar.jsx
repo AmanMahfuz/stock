@@ -46,6 +46,16 @@ export default function UserSidebar() {
                     <span className="text-sm font-medium">Dashboard</span>
                 </Link>
                 <Link
+                    to="/catalog"
+                    className={`flex items-center gap-3 px-3 py-2 rounded-lg ${isActive('/catalog')
+                        ? 'bg-primary/10 text-primary dark:bg-primary/20'
+                        : 'hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-800 dark:text-zinc-200'
+                        }`}
+                >
+                    <span className="material-symbols-outlined">inventory_2</span>
+                    <span className="text-sm font-medium">Product Catalog</span>
+                </Link>
+                <Link
                     to="/transfer"
                     className={`flex items-center gap-3 px-3 py-2 rounded-lg ${isActive('/transfer')
                         ? 'bg-primary/10 text-primary dark:bg-primary/20'

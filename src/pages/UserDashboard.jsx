@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getCurrentUser, logout, getUserStats, getUserTransactions } from '../services/api'
+import UserSidebar from '../components/UserSidebar'
 
 export default function UserDashboard() {
   const navigate = useNavigate()
   const user = getCurrentUser()
   const [searchQuery, setSearchQuery] = useState('')
-  const [dateFilter, setDateFilter] = useState('all') // all, today, yesterday, last7days, last30days, custom
+  const [dateFilter, setDateFilter] = useState('today') // all, today, yesterday, last7days, last30days, custom
   const [customStartDate, setCustomStartDate] = useState('')
   const [customEndDate, setCustomEndDate] = useState('')
   const [stats, setStats] = useState({
@@ -123,72 +124,7 @@ export default function UserDashboard() {
 
   return (
     <div className="flex min-h-screen bg-zinc-50 dark:bg-[#1c1a16]">
-      {/* Sidebar */}
-      <aside className="flex w-64 flex-col border-r border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#191714] p-4 fixed left-0 top-0 h-screen">
-        {/* Logo */}
-        <div className="flex items-center gap-2 mb-8">
-          <div className="w-8 h-8 bg-primary rounded-lg"></div>
-          <h1 className="text-lg font-bold text-zinc-900 dark:text-white">SMART FLOOR</h1>
-        </div>
-
-        {/* User Info */}
-        <div className="flex items-center gap-3 mb-8 pb-8 border-b border-zinc-200 dark:border-zinc-800">
-          <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold">
-            {user?.name?.charAt(0) || 'U'}
-          </div>
-          <div>
-            <div className="text-sm font-medium text-zinc-900 dark:text-white">{user?.name || 'User'}</div>
-            <div className="text-xs text-zinc-500 dark:text-zinc-400">{user?.role || 'Sales Staff'}</div>
-          </div>
-        </div>
-
-        {/* Navigation */}
-        <nav className="flex flex-col gap-2 flex-grow">
-          <button className="flex items-center gap-3 px-3 py-2 rounded-lg bg-primary/10 text-primary dark:bg-primary/20">
-            <span className="material-symbols-outlined fill">dashboard</span>
-            <span className="text-sm font-medium">Dashboard</span>
-          </button>
-          <button
-            onClick={() => navigate('/transfer')}
-            className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-800 dark:text-zinc-200"
-          >
-            <span className="material-symbols-outlined">sync_alt</span>
-            <span className="text-sm font-medium">Transfer to Customer</span>
-          </button>
-          <button
-            onClick={() => navigate('/return')}
-            className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-800 dark:text-zinc-200"
-          >
-            <span className="material-symbols-outlined">keyboard_return</span>
-            <span className="text-sm font-medium">Returns</span>
-          </button>
-          <button
-            onClick={() => navigate('/transactions')}
-            className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-800 dark:text-zinc-200"
-          >
-            <span className="material-symbols-outlined">history</span>
-            <span className="text-sm font-medium">Transaction History</span>
-          </button>
-        </nav>
-
-        {/* Footer Actions */}
-        <div className="flex flex-col gap-1 mt-auto">
-          <button
-            onClick={() => navigate('/profile')}
-            className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-800 dark:text-zinc-200"
-          >
-            <span className="material-symbols-outlined">settings</span>
-            <span className="text-sm font-medium">Settings</span>
-          </button>
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-800 dark:text-zinc-200"
-          >
-            <span className="material-symbols-outlined">logout</span>
-            <span className="text-sm font-medium">Log Out</span>
-          </button>
-        </div>
-      </aside>
+      <UserSidebar />
 
       {/* Main Content */}
       <main className="flex-1 ml-64 p-8">

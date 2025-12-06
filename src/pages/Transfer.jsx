@@ -9,10 +9,8 @@ export default function Transfer() {
   const [products, setProducts] = useState([])
   const [items, setItems] = useState([])
   const [toUserId, setToUserId] = useState('')
-  const [customerName, setCustomerName] = useState('')
   const [showScanner, setShowScanner] = useState(false)
   const [manualSKU, setManualSKU] = useState('')
-  const [transactionType, setTransactionType] = useState('TRANSFER') // 'TRANSFER' (Issue) or 'JOB_RETURN' (Return from Job)
 
   const currentUser = getCurrentUser()
   const isAdmin = currentUser?.role === 'ADMIN'
@@ -68,33 +66,16 @@ export default function Transfer() {
           toUserId,
           items: items.map(i => ({ productId: i.id, qty: i.qty }))
         })
+        alert('✅ Stock Transferred!')
       } else {
-        // User taking stock from warehouse
-        if (transactionType === 'TRANSFER') {
-          await client.post('/take-stock', {
-            items: items.map(i => ({ productId: i.id, qty: i.qty }))
-          })
-        } else {
-          // Return from Job (Customer -> User) - Keep existing logic or remove if redundant?
-          // User request says "transfer mean this much product taken and in return page show the products transfer"
-          // The 'Return' page is User -> Warehouse.
-          // This 'Job Return' button on Transfer page might be confusing now.
-          // But let's keep it if they want to track returns from a specific job site back to their truck?
-          // Actually, the user said "return page show the products transfer and in their the user can put the stock qty that to return".
-          // This implies the 'Return' page is the main place for returns.
-          // The 'Job Return' on Transfer page was 'Customer -> User'.
-          // I will leave it for now but the main request is about 'Taking'.
-          await client.post('/user-transactions', {
-            items: items.map(i => ({ productId: i.id, qty: i.qty })),
-            customer_name: customerName || 'Self',
-            type: transactionType
-          })
-        }
+        // User taking stock from warehouse (Adds to inventory)
+        await client.post('/take-stock', {
+          items: items.map(i => ({ productId: i.id, qty: i.qty }))
+        })
+        alert('✅ Stock Taken from Warehouse!')
       }
-      alert(transactionType === 'JOB_RETURN' ? '✅ Return from Job recorded!' : '✅ Stock Taken from Warehouse!')
       setItems([])
       setToUserId('')
-      setCustomerName('')
     } catch (e) {
       const errorMessage = e.response?.data?.message || e.message || 'Transaction failed'
       alert(`❌ ${errorMessage}`)
@@ -113,26 +94,16 @@ export default function Transfer() {
         <div className="max-w-4xl mx-auto">
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-zinc-900 dark:text-white mb-2">
-              {isAdmin ? 'Transfer Stock' : 'Job / Sales Management'}
+              {isAdmin ? 'Transfer Stock' : 'Take Stock from Warehouse'}
             </h1>
             <p className="text-zinc-500 dark:text-zinc-400">
               {isAdmin
                 ? 'Move stock from warehouse to staff'
-                : 'Manage stock issued to jobs or returned from sites'}
+                : 'Select products to take from the warehouse for your jobs.'}
             </p>
           </div>
 
-          {!isAdmin && (
-            <div className="mb-8">
-              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                <p className="text-blue-800 dark:text-blue-200 text-sm">
-                  <strong>Job / Sales Mode:</strong> Select products from the warehouse to take to a job site.
-                  This will add to your personal stock liability.
-                </p>
-              </div>
-            </div>
-          )}
-          <div className="grid grid-cols-1 gap-6"> {/* Changed to single column for wider inputs */}
+          <div className="grid grid-cols-1 gap-6">
             {/* Left Column */}
             <div className="space-y-6">
               {/* Select Recipient - ADMIN ONLY */}
