@@ -4,8 +4,11 @@ import ConfirmDialog from '../components/ConfirmDialog'
 import BarcodeScanner from '../components/BarcodeScanner'
 import Sidebar from '../components/Sidebar'
 
+import MobileHeader from '../components/MobileHeader'
+
 export default function Products() {
   const [products, setProducts] = useState([])
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState(null)
   const [form, setForm] = useState({ name: '', category: '', size: '', purchasePrice: '', sellingPrice: '', stock: '', barcode: '', image: '', width: '', height: '' })
@@ -129,143 +132,145 @@ export default function Products() {
     <div className="flex min-h-screen bg-zinc-50 dark:bg-[#1c1a16]">
       {showScanner && <BarcodeScanner onScan={handleScan} onClose={() => setShowScanner(false)} />}
 
-      <Sidebar />
+      <Sidebar
+        className={`${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0`}
+        onClose={() => setMobileMenuOpen(false)}
+      />
 
       {/* Main Content */}
-      <main className="flex-1 ml-64 p-8">
-        <div className="max-w-7xl mx-auto">
-          {/* Header */}
-          <div className="mb-6">
-            <h1 className="text-3xl font-bold text-zinc-900 dark:text-white mb-2">Product Management</h1>
-          </div>
+      <div className="flex-1 flex flex-col min-w-0 lg:ml-64">
+        <MobileHeader onMenuClick={() => setMobileMenuOpen(true)} title="Products" />
 
-          {/* Actions Bar */}
-          <div className="flex items-center gap-4 mb-6">
-            <div className="flex-1 flex items-center gap-2 px-4 py-2 bg-white dark:bg-[#191714] border border-zinc-200 dark:border-zinc-800 rounded-lg">
-              <span className="material-symbols-outlined text-zinc-400">search</span>
-              <input
-                type="text"
-                placeholder="Search by name or barcode..."
-                value={query}
-                onChange={e => setQuery(e.target.value)}
-                className="flex-1 bg-transparent outline-none text-sm text-zinc-900 dark:text-white placeholder:text-zinc-400"
-              />
+        <main className="flex-1 p-4 lg:p-8">
+          <div className="max-w-7xl mx-auto">
+            {/* Header */}
+            <div className="mb-6">
+              <h1 className="text-3xl font-bold text-zinc-900 dark:text-white mb-2">Product Management</h1>
             </div>
-            <select
-              value={categoryFilter}
-              onChange={e => setCategoryFilter(e.target.value)}
-              className="px-4 py-2 bg-white dark:bg-[#191714] border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm text-zinc-900 dark:text-white outline-none cursor-pointer"
-            >
-              <option>All Categories</option>
-              <option>Marble Look</option>
-              <option>Porcelain</option>
-              <option>Ceramic</option>
-              <option>Wood Look</option>
-              <option>Natural Stone</option>
-            </select>
-            <button
-              onClick={() => setShowScanner(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-[#191714] border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm font-medium text-zinc-900 dark:text-white hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
-            >
-              <span className="material-symbols-outlined text-primary">qr_code_scanner</span>
-              Scan to Add
-            </button>
-            <button
-              onClick={openAdd}
-              className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-bold hover:bg-primary/90 transition-colors"
-            >
-              <span className="text-lg">+</span>
-              Add Product
-            </button>
-          </div>
 
-          {/* Product Table */}
-          <div className="bg-white dark:bg-[#191714] rounded-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden mb-6">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50">
-                  <th className="text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase px-6 py-4">Image</th>
-                  <th className="text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase px-6 py-4">Product Name</th>
-                  <th className="text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase px-6 py-4">Category</th>
-                  <th className="text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase px-6 py-4">Tile Size</th>
-                  <th className="text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase px-6 py-4">Price</th>
-                  <th className="text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase px-6 py-4">Stock Count</th>
-                  <th className="text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase px-6 py-4">Barcode</th>
-                  <th className="text-center text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase px-6 py-4">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {currentProducts.map(p => (
-                  <tr key={p.id || p.barcode} className="border-b border-zinc-100 dark:border-zinc-800/50 hover:bg-zinc-50 dark:hover:bg-zinc-900/30 transition-colors">
-                    <td className="px-6 py-4">
-                      <img
-                        src={p.image || 'https://via.placeholder.com/48'}
-                        alt={p.name}
-                        className="w-12 h-12 rounded object-cover"
-                      />
-                    </td>
-                    <td className="px-6 py-4 text-sm font-medium text-zinc-900 dark:text-white">{p.name || 'N/A'}</td>
-                    <td className="px-6 py-4 text-sm text-zinc-900 dark:text-white">{p.category || 'N/A'}</td>
-                    <td className="px-6 py-4 text-sm text-zinc-500 dark:text-zinc-400">{p.size || 'N/A'}</td>
-                    <td className="px-6 py-4 text-sm text-zinc-900 dark:text-white">${p.sellingPrice || '0.00'} / sq ft</td>
-                    <td className="px-6 py-4 text-sm text-zinc-900 dark:text-white">{p.stock || 0}</td>
-                    <td className="px-6 py-4 text-sm text-zinc-500 dark:text-zinc-400">{p.barcode || 'N/A'}</td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center justify-center gap-2">
-                        <button
-                          onClick={() => onEdit(p)}
-                          className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded transition-colors"
-                        >
-                          <span className="material-symbols-outlined text-zinc-600 dark:text-zinc-400 text-lg">edit</span>
-                        </button>
-                        <button
-                          onClick={() => onDeleteRequest(p)}
-                          className="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
-                        >
-                          <span className="material-symbols-outlined text-red-600 dark:text-red-400 text-lg">delete</span>
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-center gap-2">
-              <button
-                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-                className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                <span className="material-symbols-outlined text-zinc-600 dark:text-zinc-400">chevron_left</span>
-              </button>
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                <button
-                  key={page}
-                  onClick={() => setCurrentPage(page)}
-                  className={`w-8 h-8 rounded text-sm font-medium transition-colors ${page === currentPage
-                    ? 'bg-primary text-white'
-                    : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800'
-                    }`}
+            {/* Actions Bar */}
+            <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-4 mb-6">
+              <div className="flex-1 flex items-center gap-2 px-4 py-2 bg-white dark:bg-[#191714] border border-zinc-200 dark:border-zinc-800 rounded-lg">
+                <span className="material-symbols-outlined text-zinc-400">search</span>
+                <input
+                  type="text"
+                  placeholder="Search by name or barcode..."
+                  value={query}
+                  onChange={e => setQuery(e.target.value)}
+                  className="flex-1 bg-transparent outline-none text-sm text-zinc-900 dark:text-white placeholder:text-zinc-400"
+                />
+              </div>
+              <div className="flex flex-wrap gap-4">
+                <select
+                  value={categoryFilter}
+                  onChange={e => setCategoryFilter(e.target.value)}
+                  className="flex-1 lg:flex-none px-4 py-2 bg-white dark:bg-[#191714] border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm text-zinc-900 dark:text-white outline-none cursor-pointer"
                 >
-                  {page}
+                  <option>All Categories</option>
+                  <option>Marble Look</option>
+                  <option>Porcelain</option>
+                  <option>Ceramic</option>
+                  <option>Wood Look</option>
+                  <option>Natural Stone</option>
+                </select>
+                <button
+                  onClick={() => setShowScanner(true)}
+                  className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-white dark:bg-[#191714] border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm font-medium text-zinc-900 dark:text-white hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
+                >
+                  <span className="material-symbols-outlined text-primary">qr_code_scanner</span>
+                  <span className="whitespace-nowrap">Scan to Add</span>
                 </button>
-              ))}
-              <button
-                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                disabled={currentPage === totalPages}
-                className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                <span className="material-symbols-outlined text-zinc-600 dark:text-zinc-400">chevron_right</span>
-              </button>
+                <button
+                  onClick={openAdd}
+                  className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-bold hover:bg-primary/90 transition-colors"
+                >
+                  <span className="text-lg">+</span>
+                  <span className="whitespace-nowrap">Add Product</span>
+                </button>
+              </div>
             </div>
-          )}
-        </div>
-      </main>
 
+            {/* Product Table */}
+            <div className="bg-white dark:bg-[#191714] rounded-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden mb-6">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50">
+                      <th className="text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase px-6 py-4 whitespace-nowrap">Product Name</th>
+                      <th className="text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase px-6 py-4 whitespace-nowrap">Category</th>
+                      <th className="text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase px-6 py-4 whitespace-nowrap">Tile Size</th>
+                      <th className="text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase px-6 py-4 whitespace-nowrap">Price</th>
+                      <th className="text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase px-6 py-4 whitespace-nowrap">Stock Count</th>
+                      <th className="text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase px-6 py-4 whitespace-nowrap">Barcode</th>
+                      <th className="text-center text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase px-6 py-4 whitespace-nowrap">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {currentProducts.map(p => (
+                      <tr key={p.id || p.barcode} className="border-b border-zinc-100 dark:border-zinc-800/50 hover:bg-zinc-50 dark:hover:bg-zinc-900/30 transition-colors">
+                        <td className="px-6 py-4 text-sm font-medium text-zinc-900 dark:text-white whitespace-nowrap">{p.name || 'N/A'}</td>
+                        <td className="px-6 py-4 text-sm text-zinc-900 dark:text-white whitespace-nowrap">{p.category || 'N/A'}</td>
+                        <td className="px-6 py-4 text-sm text-zinc-500 dark:text-zinc-400 whitespace-nowrap">{p.size || 'N/A'}</td>
+                        <td className="px-6 py-4 text-sm text-zinc-900 dark:text-white whitespace-nowrap">${p.sellingPrice || '0.00'} / sq ft</td>
+                        <td className="px-6 py-4 text-sm text-zinc-900 dark:text-white whitespace-nowrap">{p.stock || 0}</td>
+                        <td className="px-6 py-4 text-sm text-zinc-500 dark:text-zinc-400 whitespace-nowrap">{p.barcode || 'N/A'}</td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center justify-center gap-2">
+                            <button
+                              onClick={() => onEdit(p)}
+                              className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded transition-colors"
+                            >
+                              <span className="material-symbols-outlined text-zinc-600 dark:text-zinc-400 text-lg">edit</span>
+                            </button>
+                            <button
+                              onClick={() => onDeleteRequest(p)}
+                              className="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+                            >
+                              <span className="material-symbols-outlined text-red-600 dark:text-red-400 text-lg">delete</span>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-center gap-2">
+                <button
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  <span className="material-symbols-outlined text-zinc-600 dark:text-zinc-400">chevron_left</span>
+                </button>
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                  <button
+                    key={page}
+                    onClick={() => setCurrentPage(page)}
+                    className={`w-8 h-8 rounded text-sm font-medium transition-colors ${page === currentPage
+                      ? 'bg-primary text-white'
+                      : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                      }`}
+                  >
+                    {page}
+                  </button>
+                ))}
+                <button
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  <span className="material-symbols-outlined text-zinc-600 dark:text-zinc-400">chevron_right</span>
+                </button>
+              </div>
+            )}
+          </div>
+        </main>
+      </div>
       {/* Add/Edit Modal */}
       {showForm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -329,59 +334,6 @@ export default function Products() {
               <div>
                 <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">Barcode *</label>
                 <input className="auth-input" required value={form.barcode} onChange={e => setForm({ ...form, barcode: e.target.value })} />
-              </div>
-
-              {/* Image Upload Section */}
-              <div className="col-span-2">
-                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">Product Image</label>
-                <div className="space-y-3">
-                  {/* Image Preview */}
-                  {form.image && (
-                    <div className="relative w-32 h-32 rounded-lg overflow-hidden border-2 border-zinc-200 dark:border-zinc-700">
-                      <img src={form.image} alt="Preview" className="w-full h-full object-cover" />
-                      <button
-                        type="button"
-                        onClick={() => setForm({ ...form, image: '' })}
-                        className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full hover:bg-red-600"
-                      >
-                        <span className="material-symbols-outlined text-sm">close</span>
-                      </button>
-                    </div>
-                  )}
-
-                  {/* Upload Button */}
-                  <div className="flex gap-3">
-                    <label className="flex-1 cursor-pointer">
-                      <div className="flex items-center justify-center gap-2 px-4 py-2 bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white rounded-lg border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors">
-                        <span className="material-symbols-outlined text-lg">upload</span>
-                        <span className="text-sm font-medium">Upload Image</span>
-                      </div>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={e => {
-                          const file = e.target.files?.[0]
-                          if (file) {
-                            const reader = new FileReader()
-                            reader.onloadend = () => {
-                              setForm({ ...form, image: reader.result })
-                            }
-                            reader.readAsDataURL(file)
-                          }
-                        }}
-                      />
-                    </label>
-                    <span className="text-xs text-zinc-500 dark:text-zinc-400 self-center">or</span>
-                    <input
-                      type="text"
-                      placeholder="Enter image URL"
-                      className="flex-1 auth-input text-sm"
-                      value={form.image?.startsWith('data:') ? '' : form.image}
-                      onChange={e => setForm({ ...form, image: e.target.value })}
-                    />
-                  </div>
-                </div>
               </div>
 
               <div className="col-span-2 flex gap-3 mt-4">

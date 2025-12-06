@@ -33,7 +33,7 @@ export default function App() {
   const location = useLocation()
   const isAuthPage = ['/login', '/signup'].includes(location.pathname)
   // Hide Header and BottomNav on admin pages that use Sidebar
-  const isAdminPage = ['/admin', '/user', '/products', '/transfer', '/return', '/reports', '/transactions', '/catalog'].includes(location.pathname)
+  const isAdminPage = ['/admin', '/user', '/products', '/transfer', '/return', '/reports', '/transactions', '/catalog', '/profile'].includes(location.pathname)
 
   return (
     <div className="app">

@@ -4,7 +4,10 @@ import Sidebar from '../components/Sidebar'
 import UserSidebar from '../components/UserSidebar'
 import BarcodeScanner from '../components/BarcodeScanner'
 
+import MobileHeader from '../components/MobileHeader'
+
 export default function ReturnPage() {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [inventory, setInventory] = useState([])
   const [returnQtys, setReturnQtys] = useState({}) // { productId: qty }
   const [accountedFor, setAccountedFor] = useState({}) // { productId: true } - marks product as fully used/sold
@@ -160,181 +163,192 @@ export default function ReturnPage() {
       {showScanner && <BarcodeScanner onScan={handleScan} onClose={() => setShowScanner(false)} />}
 
       {/* Conditional Sidebar based on role */}
-      {getCurrentUser()?.role === 'ADMIN' ? <Sidebar /> : <UserSidebar />}
+      {getCurrentUser()?.role === 'ADMIN' ? (
+        <Sidebar
+          className={`${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0`}
+          onClose={() => setMobileMenuOpen(false)}
+        />
+      ) : (
+        <UserSidebar
+          className={`${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0`}
+          onClose={() => setMobileMenuOpen(false)}
+        />
+      )}
 
       {/* Main Content */}
-      <main className="flex-1 ml-64 p-8">
-        <div className="max-w-7xl mx-auto">
-          {/* Header */}
-          <div className="mb-6">
-            <h1 className="text-3xl font-bold text-zinc-900 dark:text-white mb-2">Return Stock</h1>
-            <p className="text-zinc-500 dark:text-zinc-400">Scan barcodes or enter quantities to return items to the warehouse.</p>
-          </div>
+      <div className="flex-1 flex flex-col min-w-0 lg:ml-64">
+        <MobileHeader onMenuClick={() => setMobileMenuOpen(true)} title="Return Stock" />
 
-          {/* Barcode Scanner Section */}
-          <div className="bg-gradient-to-r from-primary/10 to-primary/5 dark:from-primary/20 dark:to-primary/10 rounded-xl border border-primary/20 dark:border-primary/30 p-6 mb-6">
-            <div className="flex items-center gap-2 mb-3">
-              <span className="material-symbols-outlined text-primary text-2xl">qr_code_scanner</span>
-              <h2 className="text-lg font-bold text-zinc-900 dark:text-white">Quick Barcode Scan</h2>
-            </div>
-            <form onSubmit={handleBarcodeSubmit} className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={() => setShowScanner(true)}
-                className="px-6 py-3 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-white rounded-lg font-medium hover:bg-zinc-100 dark:hover:bg-zinc-700 flex items-center gap-2"
-              >
-                <span className="material-symbols-outlined">photo_camera</span>
-                Scan
-              </button>
-              <div className="flex-1 relative">
-                <input
-                  type="text"
-                  placeholder="Or enter barcode manually..."
-                  value={barcodeInput}
-                  onChange={e => setBarcodeInput(e.target.value)}
-                  className="w-full px-4 py-3 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-sm text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-primary/20"
-                />
-              </div>
-              <button
-                type="submit"
-                className="px-6 py-3 bg-primary text-white rounded-lg font-bold hover:bg-primary/90 transition-all active:scale-[0.98]"
-              >
-                Add to Return
-              </button>
-            </form>
-            <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-2">
-              💡 Tip: Each scan adds 1 unit to the return quantity for that product
-            </p>
-          </div>
-
-          <div className="bg-white dark:bg-[#191714] rounded-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden">
-            <div className="p-6 border-b border-zinc-200 dark:border-zinc-800">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-bold text-zinc-900 dark:text-white">Your Inventory</h2>
-                {totalReturning > 0 && (
-                  <span className="text-sm text-primary font-medium">
-                    Returning {totalReturning} item{totalReturning !== 1 ? 's' : ''}
-                  </span>
-                )}
-              </div>
-              {/* Search Bar */}
-              <div className="relative">
-                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400">search</span>
-                <input
-                  type="text"
-                  placeholder="Search products..."
-                  value={searchQuery}
-                  onChange={e => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm text-zinc-900 dark:text-white placeholder-zinc-400 outline-none focus:ring-2 focus:ring-primary/20"
-                />
-              </div>
+        <main className="flex-1 p-4 lg:p-8">
+          <div className="max-w-7xl mx-auto">
+            {/* Header */}
+            <div className="mb-6">
+              <h1 className="text-3xl font-bold text-zinc-900 dark:text-white mb-2">Return Stock</h1>
+              <p className="text-zinc-500 dark:text-zinc-400">Scan barcodes or enter quantities to return items to the warehouse.</p>
             </div>
 
-            {loading ? (
-              <div className="text-center py-12 text-zinc-500 dark:text-zinc-400">
-                Loading inventory...
+            {/* Barcode Scanner Section */}
+            <div className="bg-gradient-to-r from-primary/10 to-primary/5 dark:from-primary/20 dark:to-primary/10 rounded-xl border border-primary/20 dark:border-primary/30 p-6 mb-6">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="material-symbols-outlined text-primary text-2xl">qr_code_scanner</span>
+                <h2 className="text-lg font-bold text-zinc-900 dark:text-white">Quick Barcode Scan</h2>
               </div>
-            ) : filteredInventory.length > 0 ? (
-              <div>
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50">
-                      <th className="text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase px-6 py-4">Product</th>
-                      <th className="text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase px-6 py-4">Category</th>
-                      <th className="text-center text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase px-6 py-4">You Have</th>
-                      <th className="text-center text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase px-6 py-4">Return Qty</th>
-                      <th className="text-center text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase px-6 py-4">All Used</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredInventory.map(item => (
-                      <tr key={item.product_id} className="border-b border-zinc-100 dark:border-zinc-800/50 hover:bg-zinc-50 dark:hover:bg-zinc-900/30 transition-colors">
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-3">
-                            <img
-                              src={item.product?.image_url || 'https://via.placeholder.com/48'}
-                              alt={item.product?.name}
-                              className="w-12 h-12 rounded object-cover bg-zinc-100 dark:bg-zinc-800"
-                            />
-                            <div>
-                              <div className="font-medium text-sm text-zinc-900 dark:text-white">{item.product?.name || 'Unknown'}</div>
-                              <div className="text-xs text-zinc-500 dark:text-zinc-400">SKU: {item.product?.barcode}</div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 text-sm text-zinc-500 dark:text-zinc-400">{item.product?.category}</td>
-                        <td className="px-6 py-4 text-center text-sm font-medium text-zinc-900 dark:text-white">{item.quantity}</td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-center justify-center gap-2">
-                            <button
-                              onClick={() => updateReturnQty(item.product_id, (returnQtys[item.product_id] || 0) - 1)}
-                              className="w-8 h-8 flex items-center justify-center bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded hover:bg-zinc-100 dark:hover:bg-zinc-700"
-                            >
-                              <span className="material-symbols-outlined text-sm">remove</span>
-                            </button>
-                            <input
-                              type="number"
-                              min="0"
-                              max={item.quantity}
-                              value={returnQtys[item.product_id] || 0}
-                              onChange={e => updateReturnQty(item.product_id, e.target.value)}
-                              className="w-20 text-center font-medium text-zinc-900 dark:text-white bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded px-2 py-1 outline-none focus:ring-2 focus:ring-primary/20"
-                            />
-                            <button
-                              onClick={() => updateReturnQty(item.product_id, (returnQtys[item.product_id] || 0) + 1)}
-                              disabled={returnQtys[item.product_id] >= item.quantity}
-                              className="w-8 h-8 flex items-center justify-center bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded hover:bg-zinc-100 dark:hover:bg-zinc-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                              <span className="material-symbols-outlined text-sm">add</span>
-                            </button>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-center justify-center">
-                            <label className="flex items-center cursor-pointer" title="Check to hide this product (rest is sold/used)">
-                              <input
-                                type="checkbox"
-                                checked={accountedFor[item.product_id] || false}
-                                onChange={e => toggleAccountedFor(item.product_id, e.target.checked)}
-                                className="w-5 h-5 text-primary bg-white dark:bg-zinc-800 border-zinc-300 dark:border-zinc-600 rounded focus:ring-2 focus:ring-primary/20"
-                              />
-                            </label>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <form onSubmit={handleBarcodeSubmit} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowScanner(true)}
+                  className="px-6 py-3 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-white rounded-lg font-medium hover:bg-zinc-100 dark:hover:bg-zinc-700 flex items-center justify-center gap-2"
+                >
+                  <span className="material-symbols-outlined">photo_camera</span>
+                  Scan
+                </button>
+                <div className="flex-1 relative">
+                  <input
+                    type="text"
+                    placeholder="Or enter barcode manually..."
+                    value={barcodeInput}
+                    onChange={e => setBarcodeInput(e.target.value)}
+                    className="w-full px-4 py-3 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-sm text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-primary/20"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  className="px-6 py-3 bg-primary text-white rounded-lg font-bold hover:bg-primary/90 transition-all active:scale-[0.98]"
+                >
+                  Add to Return
+                </button>
+              </form>
+              <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-2">
+                💡 Tip: Each scan adds 1 unit to the return quantity for that product
+              </p>
+            </div>
 
-                <div className="p-6 border-t border-zinc-200 dark:border-zinc-800">
-                  <div className="flex gap-3">
-                    <button
-                      onClick={() => setReturnQtys({})}
-                      className="flex-1 px-4 py-3 bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white rounded-lg font-medium hover:bg-zinc-200 dark:hover:bg-zinc-700"
-                    >
-                      Clear All
-                    </button>
-                    <button
-                      onClick={handleSubmit}
-                      disabled={totalReturning === 0}
-                      className={`flex-1 px-4 py-3 rounded-lg font-bold text-white transition-all active:scale-[0.98] ${totalReturning === 0
-                        ? 'bg-zinc-300 dark:bg-zinc-700 cursor-not-allowed'
-                        : 'bg-primary hover:bg-primary/90'
-                        }`}
-                    >
-                      Submit Return
-                    </button>
-                  </div>
+            <div className="bg-white dark:bg-[#191714] rounded-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden">
+              <div className="p-6 border-b border-zinc-200 dark:border-zinc-800">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-bold text-zinc-900 dark:text-white">Your Inventory</h2>
+                  {totalReturning > 0 && (
+                    <span className="text-sm text-primary font-medium">
+                      Returning {totalReturning} item{totalReturning !== 1 ? 's' : ''}
+                    </span>
+                  )}
+                </div>
+                {/* Search Bar */}
+                <div className="relative">
+                  <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400">search</span>
+                  <input
+                    type="text"
+                    placeholder="Search products..."
+                    value={searchQuery}
+                    onChange={e => setSearchQuery(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm text-zinc-900 dark:text-white placeholder-zinc-400 outline-none focus:ring-2 focus:ring-primary/20"
+                  />
                 </div>
               </div>
-            ) : (
-              <div className="text-center py-12 text-zinc-500 dark:text-zinc-400">
-                No items in your inventory to return
+
+              <div className="overflow-x-auto">
+                {loading ? (
+                  <div className="text-center py-12 text-zinc-500 dark:text-zinc-400">
+                    Loading inventory...
+                  </div>
+                ) : filteredInventory.length > 0 ? (
+                  <div>
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50">
+                          <th className="text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase px-6 py-4 whitespace-nowrap">Product</th>
+                          <th className="text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase px-6 py-4 whitespace-nowrap">Category</th>
+                          <th className="text-center text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase px-6 py-4 whitespace-nowrap">You Have</th>
+                          <th className="text-center text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase px-6 py-4 whitespace-nowrap">Return Qty</th>
+                          <th className="text-center text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase px-6 py-4 whitespace-nowrap">All Used</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredInventory.map(item => (
+                          <tr key={item.product_id} className="border-b border-zinc-100 dark:border-zinc-800/50 hover:bg-zinc-50 dark:hover:bg-zinc-900/30 transition-colors">
+                            <td className="px-6 py-4">
+                              <div className="flex items-center gap-3">
+                                <div>
+                                  <div className="font-medium text-sm text-zinc-900 dark:text-white whitespace-nowrap">{item.product?.name || 'Unknown'}</div>
+                                  <div className="text-xs text-zinc-500 dark:text-zinc-400 whitespace-nowrap">SKU: {item.product?.barcode}</div>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 text-sm text-zinc-500 dark:text-zinc-400 whitespace-nowrap">{item.product?.category}</td>
+                            <td className="px-6 py-4 text-center text-sm font-medium text-zinc-900 dark:text-white whitespace-nowrap">{item.quantity}</td>
+                            <td className="px-6 py-4">
+                              <div className="flex items-center justify-center gap-2">
+                                <button
+                                  onClick={() => updateReturnQty(item.product_id, (returnQtys[item.product_id] || 0) - 1)}
+                                  className="w-8 h-8 flex items-center justify-center bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded hover:bg-zinc-100 dark:hover:bg-zinc-700"
+                                >
+                                  <span className="material-symbols-outlined text-sm">remove</span>
+                                </button>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  max={item.quantity}
+                                  value={returnQtys[item.product_id] || 0}
+                                  onChange={e => updateReturnQty(item.product_id, e.target.value)}
+                                  className="w-20 text-center font-medium text-zinc-900 dark:text-white bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded px-2 py-1 outline-none focus:ring-2 focus:ring-primary/20"
+                                />
+                                <button
+                                  onClick={() => updateReturnQty(item.product_id, (returnQtys[item.product_id] || 0) + 1)}
+                                  disabled={returnQtys[item.product_id] >= item.quantity}
+                                  className="w-8 h-8 flex items-center justify-center bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded hover:bg-zinc-100 dark:hover:bg-zinc-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                  <span className="material-symbols-outlined text-sm">add</span>
+                                </button>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4">
+                              <div className="flex items-center justify-center">
+                                <label className="flex items-center cursor-pointer" title="Check to hide this product (rest is sold/used)">
+                                  <input
+                                    type="checkbox"
+                                    checked={accountedFor[item.product_id] || false}
+                                    onChange={e => toggleAccountedFor(item.product_id, e.target.checked)}
+                                    className="w-5 h-5 text-primary bg-white dark:bg-zinc-800 border-zinc-300 dark:border-zinc-600 rounded focus:ring-2 focus:ring-primary/20"
+                                  />
+                                </label>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+
+                    <div className="p-6 border-t border-zinc-200 dark:border-zinc-800">
+                      <div className="flex flex-col sm:flex-row gap-3">
+                        <button
+                          onClick={() => setReturnQtys({})}
+                          className="flex-1 px-4 py-3 bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white rounded-lg font-medium hover:bg-zinc-200 dark:hover:bg-zinc-700"
+                        >
+                          Clear All
+                        </button>
+                        <button
+                          onClick={handleSubmit}
+                          disabled={totalReturning === 0}
+                          className={`flex-1 px-4 py-3 rounded-lg font-bold text-white transition-all active:scale-[0.98] ${totalReturning === 0
+                            ? 'bg-zinc-300 dark:bg-zinc-700 cursor-not-allowed'
+                            : 'bg-primary hover:bg-primary/90'
+                            }`}
+                        >
+                          Submit Return
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-12 text-zinc-500 dark:text-zinc-400">
+                    No items in your inventory to return
+                  </div>
+                )}
               </div>
-            )}
+            </div>
           </div>
-        </div>
-      </main>
+        </main>
+      </div>
     </div>
   )
 }

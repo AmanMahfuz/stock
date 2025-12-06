@@ -5,7 +5,8 @@ import {
     initialTransferItems,
     initialReturns,
     initialReturnItems,
-    initialUserTransactions
+    initialUserTransactions,
+    initialCategories
 } from './mockData'
 
 const DELAY = 300 // Simulate network delay
@@ -26,6 +27,7 @@ class MockBackend {
             this.saveData('db_returns', initialReturns)
             this.saveData('db_return_items', initialReturnItems)
             this.saveData('db_user_transactions', initialUserTransactions)
+            this.saveData('db_categories', initialCategories)
         }
     }
 
@@ -333,33 +335,77 @@ class MockBackend {
         await this.delay()
         const transfers = this.getData('db_transfers')
         const transferItems = this.getData('db_transfer_items')
+        const userTransactions = this.getData('db_user_transactions')
         const products = this.getData('db_products')
 
-        // Get all transfers where user is the recipient
-        const userTransfers = transfers.filter(t => t.to_user_id === currentUser.id)
+        const allTransactions = []
 
-        // Map transfer items to transactions
-        const transactions = []
+        // 1. Incoming Transfers (Admin -> User)
+        // Use 'INCOMING' or 'RECEIVE' type? Or keep 'TRANSFER' (confusion warning)
+        // Let's call it 'RECEIVE' for incoming stock
+        const userTransfers = transfers.filter(t => t.to_user_id === currentUser.id || t.staff_id === currentUser.id)
+
         userTransfers.forEach(transfer => {
             const items = transferItems.filter(ti => ti.transfer_id === transfer.id)
             items.forEach(item => {
                 const product = products.find(p => p.id === item.product_id)
-                transactions.push({
-                    id: item.id,
-                    transfer_id: transfer.id,
-                    user_id: currentUser.id,
+                allTransactions.push({
+                    id: `transfer_${item.id}`,
+                    // user_id: currentUser.id,
                     product_id: item.product_id,
                     product_name: product?.name,
                     product_barcode: product?.barcode,
                     quantity: item.qty,
-                    type: 'TRANSFER',
-                    customer_name: transfer.customer_name, // Add customer name
+                    type: 'RECEIVE', // Differentiate incoming
+                    customer_name: 'Warehouse (Admin)',
                     created_at: transfer.created_at
                 })
             })
         })
 
-        return transactions.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+        // 2. Outgoing Transactions (User -> Customer / User -> Warehouse / User -> Used)
+        const myTransactions = userTransactions.filter(t => t.user_id === currentUser.id)
+
+        myTransactions.forEach(t => {
+            const product = products.find(p => p.id === t.product_id)
+            allTransactions.push({
+                id: `tx_${t.id}`,
+                // user_id: t.user_id,
+                product_id: t.product_id,
+                product_name: product?.name,
+                product_barcode: product?.barcode,
+                quantity: t.quantity,
+                type: t.type, // TRANSFER (to customer), RETURN, JOB_RETURN
+                customer_name: t.customer_name || (t.type === 'RETURN' ? 'Warehouse' : '-'),
+                created_at: t.created_at
+            })
+        })
+
+        return allTransactions.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+    }
+
+    async getAllUserTransactions() {
+        await this.delay()
+        const userTransactions = this.getData('db_user_transactions')
+        const users = this.getData('db_users')
+        const products = this.getData('db_products')
+
+        return userTransactions.map(t => {
+            const user = users.find(u => u.id === t.user_id)
+            const product = products.find(p => p.id === t.product_id)
+            return {
+                id: t.id,
+                user_id: t.user_id,
+                user_name: user?.name || 'Unknown',
+                type: t.type, // TRANSFER (Used), RETURN (Returned), JOB_RETURN (Incoming from job)
+                product_id: t.product_id,
+                product_name: product?.name || 'Unknown',
+                product_barcode: product?.barcode || '',
+                quantity: t.quantity,
+                created_at: t.created_at,
+                customer_name: t.customer_name
+            }
+        }).sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
     }
 
     // ========================================
@@ -390,8 +436,14 @@ class MockBackend {
 
         data.items.forEach(item => {
             const product = products.find(p => p.id === item.productId)
+
+            // 1. Get current balance before return
+            const currentBalance = this.getStaffStockForProduct(currentUser.id, item.productId)
+
+            // 2. Add back to warehouse
             product.stock_qty = (product.stock_qty || 0) + item.qty
 
+            // 3. Record Return (User -> Warehouse)
             returnItems.push({
                 id: returnItems.length + 1,
                 return_id: returnId,
@@ -407,6 +459,20 @@ class MockBackend {
                 type: 'RETURN',
                 created_at: new Date().toISOString()
             })
+
+            // 4. Auto-Use Remaining Stock (User -> 'Usage')
+            const remainder = currentBalance - item.qty
+            if (remainder > 0) {
+                userTransactions.push({
+                    id: userTransactions.length + 1 + Math.random(),
+                    user_id: currentUser.id,
+                    product_id: item.productId,
+                    quantity: remainder,
+                    type: 'TRANSFER', // Reduces user stock
+                    customer_name: 'Used / Sold (Auto-Balance)',
+                    created_at: new Date().toISOString()
+                })
+            }
         })
 
         this.saveData('db_products', products)
@@ -518,6 +584,54 @@ class MockBackend {
         }
 
         return []
+    }
+
+    // ========================================
+    // CATEGORIES
+    // ========================================
+
+    async getCategories() {
+        await this.delay()
+        return this.getData('db_categories')
+    }
+
+    async addCategory(name) {
+        await this.delay()
+        const categories = this.getData('db_categories')
+        if (categories.find(c => c.name.toLowerCase() === name.toLowerCase())) {
+            throw { response: { data: { message: 'Category already exists' } } }
+        }
+        const newCategory = {
+            id: categories.length ? Math.max(...categories.map(c => c.id)) + 1 : 1,
+            name,
+            created_at: new Date().toISOString()
+        }
+        categories.push(newCategory)
+        this.saveData('db_categories', categories)
+        return newCategory
+    }
+
+    async updateCategory(id, name) {
+        await this.delay()
+        const categories = this.getData('db_categories')
+        const idx = categories.findIndex(c => c.id === parseInt(id))
+        if (idx === -1) throw { response: { data: { message: 'Not found' } } }
+
+        if (categories.find(c => c.id !== parseInt(id) && c.name.toLowerCase() === name.toLowerCase())) {
+            throw { response: { data: { message: 'Category name already taken' } } }
+        }
+
+        categories[idx] = { ...categories[idx], name }
+        this.saveData('db_categories', categories)
+        return categories[idx]
+    }
+
+    async deleteCategory(id) {
+        await this.delay()
+        const categories = this.getData('db_categories')
+        const filtered = categories.filter(c => c.id !== parseInt(id))
+        this.saveData('db_categories', filtered)
+        return { success: true }
     }
 }
 

@@ -12,9 +12,12 @@ const client = {
 
     if (url === '/products') return { data: await mockBackend.getProducts() }
     if (url === '/users') return { data: await mockBackend.getUsers() }
+    if (url === '/categories') return { data: await mockBackend.getCategories() }
     if (url === '/stats') return { data: await mockBackend.getStats() }
     if (url === '/user-stats') return { data: await mockBackend.getUserStats(user) }
+    if (url === '/user-stats') return { data: await mockBackend.getUserStats(user) }
     if (url === '/user-transactions') return { data: await mockBackend.getUserTransactions(user) }
+    if (url === '/admin/transactions') return { data: await mockBackend.getAllUserTransactions() }
 
     if (url.startsWith('/reports/')) {
       const type = url.split('/reports/')[1]
@@ -35,6 +38,7 @@ const client = {
     if (url === '/login') return { data: await mockBackend.login(data.identifier, data.password) }
     if (url === '/signup') return { data: await mockBackend.signup(data) }
     if (url === '/products') return { data: await mockBackend.addProduct(data) }
+    if (url === '/categories') return { data: await mockBackend.addCategory(data.name) }
     if (url === '/transfers') return { data: await mockBackend.createTransfer(data) }
     if (url === '/take-stock') return { data: await mockBackend.takeStock(data, user) }
     if (url === '/user-transactions') return { data: await mockBackend.createUserTransaction(data, user) }
@@ -48,6 +52,10 @@ const client = {
       const id = url.split('/products/')[1]
       return { data: await mockBackend.updateProduct(id, data) }
     }
+    if (url.startsWith('/categories/')) {
+      const id = url.split('/categories/')[1]
+      return { data: await mockBackend.updateCategory(id, data.name) }
+    }
     throw new Error(`Mock 404: ${url}`)
   },
 
@@ -55,6 +63,10 @@ const client = {
     if (url.startsWith('/products/')) {
       const id = url.split('/products/')[1]
       return { data: await mockBackend.deleteProduct(id) }
+    }
+    if (url.startsWith('/categories/')) {
+      const id = url.split('/categories/')[1]
+      return { data: await mockBackend.deleteCategory(id) }
     }
     throw new Error(`Mock 404: ${url}`)
   }
@@ -143,12 +155,33 @@ export async function getUserTransactions() {
   return (await client.get('/user-transactions')).data
 }
 
+export async function fetchAllTransactions() {
+  return (await client.get('/admin/transactions')).data
+}
+
 export async function getUserStats() {
   return (await client.get('/user-stats')).data
 }
 
 export async function fetchStaffInventory(staffId) {
   return (await client.get(`/staff-inventory/${staffId}`)).data
+}
+
+// Categories
+export async function fetchCategories() {
+  return (await client.get('/categories')).data
+}
+
+export async function createCategory(name) {
+  return (await client.post('/categories', { name })).data
+}
+
+export async function updateCategory(id, name) {
+  return (await client.put(`/categories/${id}`, { name })).data
+}
+
+export async function deleteCategory(id) {
+  return (await client.delete(`/categories/${id}`)).data
 }
 
 export default client

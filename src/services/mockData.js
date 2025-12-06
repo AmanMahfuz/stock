@@ -137,3 +137,13 @@ export const initialTransferItems = []
 export const initialReturns = []
 export const initialReturnItems = []
 export const initialUserTransactions = []
+
+export const initialCategories = [
+    { id: 1, name: 'Marble Look', created_at: new Date().toISOString() },
+    { id: 2, name: 'Wood Look', created_at: new Date().toISOString() },
+    { id: 3, name: 'Concrete Look', created_at: new Date().toISOString() },
+    { id: 4, name: 'Stone Look', created_at: new Date().toISOString() },
+    { id: 5, name: 'Granite Look', created_at: new Date().toISOString() },
+    { id: 6, name: 'Decorative', created_at: new Date().toISOString() },
+    { id: 7, name: 'Solid Color', created_at: new Date().toISOString() }
+]
