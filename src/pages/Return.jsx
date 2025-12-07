@@ -313,13 +313,7 @@ export default function ReturnPage() {
                     </select>
                   )}
 
-                  <button
-                    onClick={() => setShowScanner(true)}
-                    className="px-6 py-3 bg-primary text-white rounded-xl font-medium hover:bg-primary/90 flex items-center gap-2"
-                  >
-                    <span className="material-symbols-outlined">qr_code_scanner</span>
-                    Scan
-                  </button>
+
                 </div>
 
                 {loading ? (
