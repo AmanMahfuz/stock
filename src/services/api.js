@@ -66,8 +66,13 @@ export async function signup(payload) {
 }
 
 export async function logout() {
-  await supabase.auth.signOut()
-  localStorage.removeItem('tsm_user')
+  try {
+    await supabase.auth.signOut()
+  } catch (error) {
+    console.warn("Supabase Logout Error (safe to ignore):", error)
+  } finally {
+    localStorage.removeItem('tsm_user')
+  }
 }
 
 export async function resetPassword(email) {
