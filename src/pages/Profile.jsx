@@ -52,7 +52,7 @@ export default function Profile() {
             <div className="flex-1 flex flex-col min-w-0 lg:ml-64">
                 <MobileHeader onMenuClick={() => setMobileMenuOpen(true)} title="My Profile" />
 
-                <main className="flex-1 p-4 lg:p-8 flex items-center justify-center">
+                <main className="flex-1 p-4 lg:p-8 pb-24 flex items-center justify-center">
                     <div className="w-full max-w-2xl">
                         {/* My Profile Heading - Visible on Desktop only maybe? Or keep for both */}
                         <h1 className="text-3xl lg:text-4xl font-bold text-zinc-900 dark:text-white mb-8 lg:mb-12 text-center">

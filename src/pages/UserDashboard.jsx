@@ -183,7 +183,7 @@ export default function UserDashboard() {
       <div className="flex-1 flex flex-col min-w-0 lg:ml-64">
         <MobileHeader onMenuClick={() => setMobileMenuOpen(true)} title="Dashboard" />
 
-        <main className="flex-1 p-4 lg:p-8">
+        <main className="flex-1 p-4 lg:p-8 pb-24">
           <div className="max-w-7xl mx-auto">
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">

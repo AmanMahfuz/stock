@@ -94,7 +94,7 @@ export default function Transactions() {
             <div className="flex-1 flex flex-col min-w-0 lg:ml-64">
                 <MobileHeader onMenuClick={() => setMobileMenuOpen(true)} title="Transactions" />
 
-                <main className="flex-1 p-4 lg:p-8">
+                <main className="flex-1 p-4 lg:p-8 pb-24">
                     <div className="max-w-7xl mx-auto">
                         <div className="mb-8">
                             <h1 className="text-3xl font-bold text-zinc-900 dark:text-white mb-2">Transaction History</h1>

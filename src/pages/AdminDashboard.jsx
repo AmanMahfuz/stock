@@ -240,7 +240,7 @@ export default function AdminDashboard() {
       />
       <div className="flex-1 flex flex-col min-w-0 lg:ml-64">
         <MobileHeader onMenuClick={() => setMobileMenuOpen(true)} title="Admin Dashboard" />
-        <main className="flex-1 p-4 lg:p-8">
+        <main className="flex-1 p-4 lg:p-8 pb-24">
 
           {/* Tab Navigation */}
           <div className="flex gap-4 border-b border-zinc-200 dark:border-zinc-800 mb-6 overflow-x-auto">
