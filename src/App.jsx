@@ -14,6 +14,8 @@ import Catalog from './pages/Catalog'
 import Header from './components/Header'
 import BottomNav from './components/BottomNav'
 
+import { getCurrentUser } from './services/api' // Import logic
+
 // Synchronous helper to get user from localStorage
 function getUserFromStorage() {
   try {
@@ -25,7 +27,9 @@ function getUserFromStorage() {
 }
 
 function RequireAuth({ children, roles }) {
+  // We trust the app's initial check has already run/cleared storage if needed
   const user = getUserFromStorage()
+
   if (!user?.token) return <Navigate to="/login" replace />
   if (roles && !roles.includes(user.role)) return <Navigate to="/" replace />
   return children
@@ -40,6 +44,30 @@ function HomeRedirect() {
 
 export default function App() {
   const location = useLocation()
+  const [authChecked, setAuthChecked] = useState(false) // New loading state
+
+  // Global Auth Check on App Load
+  useEffect(() => {
+    async function checkSession() {
+      try {
+        await getCurrentUser() // This validates session & clears storage if invalid
+      } catch (e) {
+        console.error("Session check failed", e)
+      } finally {
+        setAuthChecked(true)
+      }
+    }
+    checkSession()
+  }, [])
+
+  if (!authChecked) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-zinc-50 dark:bg-[#1c1a16]">
+        <div className="text-zinc-500">Verifying session...</div>
+      </div>
+    )
+  }
+
   const isAuthPage = ['/login', '/signup'].includes(location.pathname)
   // Hide Header and BottomNav on admin pages that use Sidebar
   const isAdminPage = ['/admin', '/user', '/products', '/transfer', '/return', '/reports', '/transactions', '/catalog', '/profile'].includes(location.pathname)
