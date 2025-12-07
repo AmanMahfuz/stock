@@ -14,9 +14,7 @@ export default function MobileHeader({ onMenuClick, title }) {
                     {title || "Smart Floor"}
                 </h1>
             </div>
-            <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-xs">
-                SF
-            </div>
+            <img src="/smart-florring-logo-main.png" alt="Smart Floor" className="w-8 h-8 object-contain" />
         </div>
     )
 }

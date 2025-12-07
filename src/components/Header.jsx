@@ -17,7 +17,7 @@ export default function Header() {
   return (
     <div className="topbar">
       <div className="logo" style={{ cursor: 'pointer' }} onClick={goHome}>
-        <div style={{ width: 32, height: 32, background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)', borderRadius: 8 }} />
+        <img src="/smart-florring-logo-main.png" alt="Smart Floor" style={{ width: 32, height: 32, objectFit: 'contain' }} />
         <div>
           <div className="app-name">SMART FLOOR</div>
           <div style={{ fontSize: '0.75rem', fontWeight: 400, color: 'var(--text-muted)' }}>{user?.role || 'Guest'}</div>

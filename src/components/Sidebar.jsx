@@ -29,6 +29,12 @@ export default function Sidebar({ className, onClose }) {
                 />
             )}
             <aside className={`flex w-64 flex-col border-r border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#191714] p-4 fixed left-0 top-0 h-screen z-50 transition-transform duration-300 ${className || 'hidden lg:flex'}`}>
+                {/* Logo */}
+                <div className="flex items-center gap-2 mb-8">
+                    <img src="/smart-florring-logo-main.png" alt="Smart Floor" className="w-8 h-8 object-contain" />
+                    <h1 className="text-lg font-bold text-zinc-900 dark:text-white">SMART FLOOR</h1>
+                </div>
+
                 {/* User Info */}
                 <div className="flex items-center gap-3 mb-8">
                     <div className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10 bg-primary/20 flex items-center justify-center text-primary font-bold">
