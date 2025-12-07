@@ -9,10 +9,7 @@ export default function BarcodeScanner({ onScan, onClose }) {
     const controlsRef = useRef(null)
     const inputRef = useRef(null)
 
-    // Auto-focus input for manual entry or hardware scanners
-    useEffect(() => {
-        if (inputRef.current) inputRef.current.focus()
-    }, [])
+
 
     useEffect(() => {
         // Use default hints (null) to match the working image uploader behavior. 

@@ -400,6 +400,38 @@ export async function createTransfer(payload) {
   return createUserTransaction({ ...payload, type: 'TRANSFER' })
 }
 
+export async function createReturn(payload) {
+  if (payload.items && Array.isArray(payload.items)) {
+    const results = []
+    for (const item of payload.items) {
+      results.push(await createUserTransaction({
+        ...payload,
+        product_id: item.productId,
+        quantity: item.qty,
+        type: 'RETURN'
+      }))
+    }
+    return results
+  }
+  return createUserTransaction({ ...payload, type: 'RETURN' })
+}
+
+export async function createUsedTransaction(payload) {
+  if (payload.items && Array.isArray(payload.items)) {
+    const results = []
+    for (const item of payload.items) {
+      results.push(await createUserTransaction({
+        ...payload,
+        product_id: item.productId,
+        quantity: item.qty,
+        type: 'USED'
+      }))
+    }
+    return results
+  }
+  return createUserTransaction({ ...payload, type: 'USED' })
+}
+
 
 
 export async function fetchStaffInventory(userId) {
