@@ -179,6 +179,73 @@ export default function AdminDashboard() {
     }
   }
 
+  // --- PRODUCT HANDLERS ---
+  async function handleSaveProduct(e) {
+    e.preventDefault()
+    setLoading(true)
+
+    // Validation
+    if (!productFormData.name?.trim() || !productFormData.category || !productFormData.barcode?.trim()) {
+      alert("Please fill in all required fields (Name, Category, Barcode)")
+      setLoading(false)
+      return
+    }
+
+    try {
+      if (editingProduct) {
+        await updateProduct(editingProduct.id || editingProduct.barcode, productFormData)
+      } else {
+        await createProduct(productFormData)
+      }
+
+      // Reset Form
+      setProductFormData({ name: '', category: '', size: '', stock_qty: '', selling_price: '', barcode: '', image_url: '' })
+      setEditingProduct(null)
+      setShowProductForm(false)
+
+      // Refresh Data
+      const pData = await fetchProducts()
+      setProducts(pData)
+      const sData = await getDashboardStats()
+      setStats(sData)
+    } catch (error) {
+      console.error("Failed to save product", error)
+      alert("Failed to save product. Please try again.")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  function openEditProduct(p) {
+    setEditingProduct(p)
+    setProductFormData({
+      name: p.name || '',
+      category: p.category || '',
+      size: p.size || '',
+      stock_qty: p.stock_qty || '',
+      selling_price: p.selling_price || '',
+      barcode: p.barcode || '',
+      image_url: p.image_url || ''
+    })
+    setShowProductForm(true)
+  }
+
+  async function handleDeleteProduct(id) {
+    if (!confirm("Are you sure you want to delete this product?")) return
+    setLoading(true)
+    try {
+      await deleteProduct(id)
+      const pData = await fetchProducts()
+      setProducts(pData)
+      const sData = await getDashboardStats()
+      setStats(sData)
+    } catch (error) {
+      console.error("Failed to delete product", error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   // --- CATEGORY HANDLERS ---
   async function handleAddCategory(e) {
     e.preventDefault()
