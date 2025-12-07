@@ -69,8 +69,12 @@ export default function App() {
   }
 
   const isAuthPage = ['/login', '/signup'].includes(location.pathname)
+  // Normalize path to remove trailing slash
+  const normalizePath = (path) => path.endsWith('/') && path.length > 1 ? path.slice(0, -1) : path
+  const currentPath = normalizePath(location.pathname)
+
   // Hide Header and BottomNav on admin pages that use Sidebar
-  const isAdminPage = ['/admin', '/user', '/products', '/transfer', '/return', '/reports', '/transactions', '/catalog', '/profile'].includes(location.pathname)
+  const isAdminPage = ['/admin', '/user', '/products', '/transfer', '/return', '/reports', '/transactions', '/catalog', '/profile'].includes(currentPath)
 
   return (
     <div className="app">
