@@ -10,7 +10,8 @@ import {
   createCategory,
   updateCategory,
   deleteCategory,
-  fetchAllTransactions // Import new function
+  fetchAllTransactions, // Import new function
+  fetchUsers // Import fetchUsers
 } from '../services/api'
 import BarcodeScanner from '../components/BarcodeScanner'
 import Sidebar from '../components/Sidebar'
@@ -23,6 +24,7 @@ export default function AdminDashboard() {
   const [products, setProducts] = useState([])
   const [categories, setCategories] = useState([])
   const [stats, setStats] = useState({ totalProducts: 0, totalStock: 0, stockValue: 0, pendingReturns: 0 })
+  const [users, setUsers] = useState([]) // Store users for mapping
 
   // Activity / Transaction State
   const [transactions, setTransactions] = useState([])
@@ -51,24 +53,27 @@ export default function AdminDashboard() {
     loadData()
   }, [])
 
-  // Load transactions when tab switches to overview (which is default)
+  // Load transactions when tab switches, filters change, OR users are loaded
   useEffect(() => {
     if (activeTab === 'overview') {
-      loadTransactions()
+      const range = getDateRange()
+      loadTransactions(range?.start?.toISOString(), range?.end?.toISOString())
     }
-  }, [activeTab])
+  }, [activeTab, dateFilter, customStartDate, customEndDate, users])
 
   async function loadData() {
     setLoading(true)
     try {
-      const [pData, cData, sData] = await Promise.all([
+      const [pData, cData, sData, uData] = await Promise.all([
         fetchProducts(),
         fetchCategories(),
-        getDashboardStats()
+        getDashboardStats(),
+        fetchUsers() // Fetch users to map user_id -> name
       ])
       setProducts(pData)
       setCategories(cData)
       setStats(sData)
+      setUsers(uData)
     } catch (e) {
       console.error("Failed to load data", e)
     } finally {
@@ -76,89 +81,27 @@ export default function AdminDashboard() {
     }
   }
 
-  async function loadTransactions() {
+  async function loadTransactions(start, end) {
+    // Avoid double fetching if custom dates aren't ready
+    if (dateFilter === 'custom' && (!start || !end)) return
+
     try {
-      const data = await fetchAllTransactions()
-      setTransactions(data)
+      const data = await fetchAllTransactions(start, end)
+
+      // Map user_id to user name using the fetched users list
+      const mappedData = data.map(t => {
+        const u = users.find(u => u.id === t.user_id)
+        // Check RPC direct return (u.name) first, then metadata
+        const linkName = u?.name || u?.raw_user_meta_data?.name || u?.user_metadata?.name
+        return {
+          ...t,
+          user_name: linkName || u?.email || 'User'
+        }
+      })
+
+      setTransactions(mappedData)
     } catch (error) {
       console.error("Failed to load transactions", error)
-    }
-  }
-
-  // --- PRODUCT HANDLERS ---
-  async function handleSaveProduct(e) {
-    e.preventDefault()
-    try {
-      if (editingProduct) {
-        await updateProduct(editingProduct.id, productFormData)
-      } else {
-        await createProduct(productFormData)
-      }
-      setShowProductForm(false)
-      setEditingProduct(null)
-      setProductFormData({ name: '', category: '', size: '', stock_qty: '', selling_price: '', barcode: '', image_url: '' })
-      loadData() // Refresh
-      alert('Product Saved!')
-    } catch (e) {
-      alert('Error saving product: ' + (e.response?.data?.message || e.message))
-    }
-  }
-
-  async function handleDeleteProduct(id) {
-    if (!window.confirm('Delete this product?')) return
-    try {
-      await deleteProduct(id)
-      loadData()
-    } catch (e) {
-      alert('Error deleting: ' + e.message)
-    }
-  }
-
-  function openEditProduct(p) {
-    setEditingProduct(p)
-    setProductFormData({
-      name: p.name,
-      category: p.category,
-      size: p.size,
-      stock_qty: p.stock_qty || p.stock || 0,
-      selling_price: p.selling_price,
-      barcode: p.barcode,
-      image_url: p.image_url
-    })
-    setShowProductForm(true)
-  }
-
-  // --- CATEGORY HANDLERS ---
-  async function handleAddCategory(e) {
-    e.preventDefault()
-    if (!newCategoryName.trim()) return
-    try {
-      await createCategory(newCategoryName)
-      setNewCategoryName('')
-      loadData()
-      alert('Category Added!')
-    } catch (e) {
-      alert('Error: ' + (e.response?.data?.message || e.message))
-    }
-  }
-
-  async function handleUpdateCategory(id, name) {
-    try {
-      await updateCategory(id, name)
-      setEditingCategory(null)
-      loadData()
-    } catch (e) {
-      alert('Error: ' + (e.response?.data?.message || e.message))
-    }
-  }
-
-  async function handleDeleteCategory(id) {
-    if (!window.confirm('Delete this category?')) return
-    try {
-      await deleteCategory(id)
-      loadData()
-    } catch (e) {
-      alert('Error: ' + e.message)
     }
   }
 
@@ -167,9 +110,13 @@ export default function AdminDashboard() {
     const today = new Date()
     today.setHours(0, 0, 0, 0) // start of today
 
+    // Always use End of Today as the default end point to include current day transactions
+    const endOfToday = new Date(today)
+    endOfToday.setHours(23, 59, 59, 999)
+
     switch (dateFilter) {
       case 'today':
-        return { start: today, end: new Date() }
+        return { start: today, end: endOfToday }
       case 'yesterday':
         const yesterday = new Date(today)
         yesterday.setDate(yesterday.getDate() - 1)
@@ -179,11 +126,11 @@ export default function AdminDashboard() {
       case 'last7days':
         const week = new Date(today)
         week.setDate(week.getDate() - 7)
-        return { start: week, end: new Date() }
+        return { start: week, end: endOfToday }
       case 'last30days':
         const month = new Date(today)
         month.setDate(month.getDate() - 30)
-        return { start: month, end: new Date() }
+        return { start: month, end: endOfToday }
       case 'custom':
         if (customStartDate && customEndDate) {
           const start = new Date(customStartDate)
@@ -198,14 +145,9 @@ export default function AdminDashboard() {
     }
   }
 
-  // Filter Transactions
+  // Filter Transactions (Client-side Search Only)
   const filteredTransactions = transactions.filter(t => {
-    // 1. Date Filter
-    const dateRange = getDateRange()
-    if (dateRange) {
-      const txDate = new Date(t.created_at)
-      if (txDate < dateRange.start || txDate > dateRange.end) return false
-    }
+    // 1. Date Filter - MOVED TO SERVER SIDE
 
     // 2. Search Filter (User, Product, Barcode)
     if (activitySearch.trim()) {

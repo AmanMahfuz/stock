@@ -1,11 +1,21 @@
 import React from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { getCurrentUser, logout } from '../services/api'
+import { logout } from '../services/api'
+
+// Get user synchronously from localStorage
+function getUserFromStorage() {
+    try {
+        const stored = localStorage.getItem('tsm_user')
+        return stored ? JSON.parse(stored) : null
+    } catch {
+        return null
+    }
+}
 
 export default function UserSidebar({ className, onClose }) {
     const location = useLocation()
     const navigate = useNavigate()
-    const user = getCurrentUser()
+    const user = getUserFromStorage()
 
     const isActive = (path) => location.pathname === path
 

@@ -1,13 +1,21 @@
 import React from 'react'
 import { useLocation, Link } from 'react-router-dom'
-import { getCurrentUser } from '../services/api'
+// Get user synchronously from localStorage
+function getUserFromStorage() {
+  try {
+    const stored = localStorage.getItem('tsm_user')
+    return stored ? JSON.parse(stored) : null
+  } catch {
+    return null
+  }
+}
 
 export default function BottomNav() {
   const loc = useLocation()
   const hidden = loc.pathname === '/login' || loc.pathname === '/signup'
   if (hidden) return null
 
-  const user = getCurrentUser()
+  const user = getUserFromStorage()
   const role = user?.role || 'GUEST'
 
   // Role-based nav items

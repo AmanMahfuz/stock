@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import Login from './pages/Login'
 import Signup from './pages/Signup'
@@ -13,17 +13,26 @@ import Transactions from './pages/Transactions'
 import Catalog from './pages/Catalog'
 import Header from './components/Header'
 import BottomNav from './components/BottomNav'
-import { getCurrentUser } from './services/api'
+
+// Synchronous helper to get user from localStorage
+function getUserFromStorage() {
+  try {
+    const stored = localStorage.getItem('tsm_user')
+    return stored ? JSON.parse(stored) : null
+  } catch {
+    return null
+  }
+}
 
 function RequireAuth({ children, roles }) {
-  const user = getCurrentUser()
+  const user = getUserFromStorage()
   if (!user?.token) return <Navigate to="/login" replace />
   if (roles && !roles.includes(user.role)) return <Navigate to="/" replace />
   return children
 }
 
 function HomeRedirect() {
-  const user = getCurrentUser()
+  const user = getUserFromStorage()
   if (!user?.token) return <Navigate to="/login" replace />
   if (user.role === 'ADMIN') return <Navigate to="/admin" replace />
   return <Navigate to="/user" replace />

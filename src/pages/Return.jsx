@@ -1,10 +1,20 @@
 import React, { useState, useEffect } from 'react'
-import { fetchProducts, createReturn, getCurrentUser, fetchStaffInventory } from '../services/api'
+import { fetchProducts, createReturn, fetchStaffInventory } from '../services/api'
 import Sidebar from '../components/Sidebar'
 import UserSidebar from '../components/UserSidebar'
 import BarcodeScanner from '../components/BarcodeScanner'
 
 import MobileHeader from '../components/MobileHeader'
+
+// Get user synchronously from localStorage
+function getUserFromStorage() {
+  try {
+    const stored = localStorage.getItem('tsm_user')
+    return stored ? JSON.parse(stored) : null
+  } catch {
+    return null
+  }
+}
 
 export default function ReturnPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -15,9 +25,18 @@ export default function ReturnPage() {
   const [barcodeInput, setBarcodeInput] = useState('')
   const [showScanner, setShowScanner] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
-  const currentUser = getCurrentUser()
+  const [users, setUsers] = useState([]) // For admin filter
+  const [selectedUserId, setSelectedUserId] = useState('') // For admin filter
+  const currentUser = getUserFromStorage()
+  const isAdmin = currentUser?.role === 'ADMIN'
 
   useEffect(() => {
+    if (isAdmin) {
+      // Load users for filter dropdown
+      import('../services/api').then(({ fetchUsers }) => {
+        fetchUsers().then(setUsers).catch(console.error)
+      })
+    }
     loadInventory()
     // Load accountedFor from localStorage
     const saved = localStorage.getItem(`accountedFor_${currentUser?.id}`)
@@ -28,12 +47,13 @@ export default function ReturnPage() {
         console.error('Failed to parse accountedFor', e)
       }
     }
-  }, [])
+  }, [selectedUserId]) // Reload when selected user changes
 
   async function loadInventory() {
     try {
       if (currentUser) {
-        const data = await fetchStaffInventory(currentUser.id)
+        const userIdToFetch = isAdmin && selectedUserId ? selectedUserId : currentUser.id
+        const data = await fetchStaffInventory(userIdToFetch)
         setInventory(data)
       }
     } catch (error) {
@@ -82,17 +102,46 @@ export default function ReturnPage() {
     }))
   }
 
-  function toggleAccountedFor(productId, checked) {
-    setAccountedFor(prev => {
-      const newState = checked
-        ? { ...prev, [productId]: true }
-        : Object.fromEntries(Object.entries(prev).filter(([key]) => key !== String(productId)))
+  async function toggleAccountedFor(productId, checked) {
+    if (!checked) return // Only handle checking the box (marking as used)
 
-      // Save to localStorage
-      localStorage.setItem(`accountedFor_${currentUser?.id}`, JSON.stringify(newState))
+    // Find item
+    const item = inventory.find(i => i.product_id === productId)
+    if (!item) return
 
-      return newState
-    })
+    // Calculate remaining (what is not being returned)
+    const returning = returnQtys[productId] || 0
+    const remainingToUse = item.quantity - returning
+
+    if (remainingToUse <= 0) {
+      // If nothing remaining, checking it does nothing visually except maybe local state,
+      // but logic wise we only care about consuming stock.
+      return
+    }
+
+    if (window.confirm(`Mark ${remainingToUse} ${item.product?.name} as USED/INSTALLED? This will remove them from your inventory.`)) {
+      try {
+        await createUsedTransaction({
+          items: [{
+            productId: productId,
+            qty: remainingToUse
+          }]
+        })
+        // Remove from local AccountedFor if it was there (cleanup)
+        setAccountedFor(prev => {
+          const next = { ...prev }
+          delete next[productId]
+          localStorage.setItem(`accountedFor_${currentUser?.id}`, JSON.stringify(next))
+          return next
+        })
+
+        // Reload inventory
+        loadInventory()
+        alert('Items marked as used.')
+      } catch (e) {
+        alert('Failed: ' + e.message)
+      }
+    }
   }
 
   async function handleSubmit() {
@@ -162,15 +211,17 @@ export default function ReturnPage() {
     <div className="flex min-h-screen bg-zinc-50 dark:bg-[#1c1a16]">
       {showScanner && <BarcodeScanner onScan={handleScan} onClose={() => setShowScanner(false)} />}
 
-      {/* Conditional Sidebar based on role */}
-      {getCurrentUser()?.role === 'ADMIN' ? (
+      {/* Show correct sidebar based on role */}
+      {currentUser?.role === 'ADMIN' ? (
         <Sidebar
-          className={`${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0`}
-          onClose={() => setMobileMenuOpen(false)}
+          className="hidden lg:flex"
+          mobileMenuOpen={mobileMenuOpen}
+          onMobileMenuClose={() => setMobileMenuOpen(false)}
         />
       ) : (
         <UserSidebar
-          className={`${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0`}
+          className="hidden lg:flex"
+          mobileMenuOpen={mobileMenuOpen}
           onClose={() => setMobileMenuOpen(false)}
         />
       )}
@@ -233,20 +284,44 @@ export default function ReturnPage() {
                     </span>
                   )}
                 </div>
-                {/* Search Bar */}
-                <div className="relative">
-                  <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400">search</span>
-                  <input
-                    type="text"
-                    placeholder="Search products..."
-                    value={searchQuery}
-                    onChange={e => setSearchQuery(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm text-zinc-900 dark:text-white placeholder-zinc-400 outline-none focus:ring-2 focus:ring-primary/20"
-                  />
-                </div>
-              </div>
+                {/* Search and Filters */}
+                <div className="mb-6 flex gap-4">
+                  <div className="relative flex-1">
+                    <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400">search</span>
+                    <input
+                      type="text"
+                      placeholder="Search products..."
+                      value={searchQuery}
+                      onChange={e => setSearchQuery(e.target.value)}
+                      className="w-full pl-10 pr-4 py-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl focus:ring-2 focus:ring-primary/50 outline-none"
+                    />
+                  </div>
 
-              <div className="overflow-x-auto">
+                  {/* Admin-only: User Filter */}
+                  {isAdmin && (
+                    <select
+                      value={selectedUserId}
+                      onChange={e => setSelectedUserId(e.target.value)}
+                      className="px-4 py-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl focus:ring-2 focus:ring-primary/50 outline-none min-w-[200px]"
+                    >
+                      <option value="">All Users</option>
+                      {users.map(user => (
+                        <option key={user.id} value={user.id}>
+                          {user.name} ({user.email})
+                        </option>
+                      ))}
+                    </select>
+                  )}
+
+                  <button
+                    onClick={() => setShowScanner(true)}
+                    className="px-6 py-3 bg-primary text-white rounded-xl font-medium hover:bg-primary/90 flex items-center gap-2"
+                  >
+                    <span className="material-symbols-outlined">qr_code_scanner</span>
+                    Scan
+                  </button>
+                </div>
+
                 {loading ? (
                   <div className="text-center py-12 text-zinc-500 dark:text-zinc-400">
                     Loading inventory...
@@ -348,7 +423,7 @@ export default function ReturnPage() {
             </div>
           </div>
         </main>
-      </div>
-    </div>
+      </div >
+    </div >
   )
 }

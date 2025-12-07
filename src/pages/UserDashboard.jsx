@@ -1,46 +1,90 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { getCurrentUser, logout, getUserStats, getUserTransactions } from '../services/api'
+import { logout, getUserStats, getUserTransactions } from '../services/api'
 import UserSidebar from '../components/UserSidebar'
 
 import MobileHeader from '../components/MobileHeader'
 
+// Get user synchronously from localStorage
+function getUserFromStorage() {
+  try {
+    const stored = localStorage.getItem('tsm_user')
+    return stored ? JSON.parse(stored) : null
+  } catch {
+    return null
+  }
+}
+
 export default function UserDashboard() {
   const navigate = useNavigate()
-  const user = getCurrentUser()
+  const user = getUserFromStorage()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
-  // ... (keep state)
   const [searchQuery, setSearchQuery] = useState('')
-  const [dateFilter, setDateFilter] = useState('today') // all, today, yesterday, last7days, last30days, custom
+  const [dateFilter, setDateFilter] = useState('today') // today, yesterday, last7days, last30days, all
   const [customStartDate, setCustomStartDate] = useState('')
   const [customEndDate, setCustomEndDate] = useState('')
+
+  const [transactions, setTransactions] = useState([])
+  const [filteredTransactions, setFilteredTransactions] = useState([])
+
+  // Real-time calculated stats
   const [stats, setStats] = useState({
-    productsTakenToday: 0,
+    productsTaken: 0,
     currentStockHolding: 0
   })
-  const [transactions, setTransactions] = useState([])
+
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    loadData()
+    loadStats()
   }, [])
 
-  async function loadData() {
+  // Load transactions when filters change
+  useEffect(() => {
+    const { start, end } = getDateRange()
+    loadTransactions(start, end)
+  }, [dateFilter, customStartDate, customEndDate])
+
+  // Client-side visual filtering (Search)
+  useEffect(() => {
+    let result = transactions
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase()
+      result = transactions.filter(t =>
+        t.product_name?.toLowerCase().includes(q) ||
+        t.product_barcode?.toLowerCase().includes(q)
+      )
+    }
+    setFilteredTransactions(result)
+  }, [searchQuery, transactions])
+
+  async function loadStats() {
     try {
-      // Fetch user stats
-      const statsData = await getUserStats()
+      const data = await getUserStats()
       setStats({
-        productsTakenToday: statsData.productsTaken || 0,
-        currentStockHolding: statsData.balanceToReturn || 0
+        productsTaken: data.productsTaken,
+        currentStockHolding: data.currentStockHolding
       })
-
-      // Fetch transaction history
-      const transactionData = await getUserTransactions()
-      setTransactions(transactionData)
-
     } catch (error) {
-      console.error('Failed to load data:', error)
+      console.error('Failed to load stats:', error)
+    }
+  }
+
+  async function loadTransactions(start, end) {
+    // Avoid double fetching if custom dates aren't ready
+    if (dateFilter === 'custom' && (!start || !end)) return
+
+    try {
+      setLoading(true)
+      const dateStart = start ? start.toISOString() : null
+      const dateEnd = end ? end.toISOString() : null
+
+      const data = await getUserTransactions(dateStart, dateEnd)
+      setTransactions(data)
+      setFilteredTransactions(data) // Initialize filtered with fetched
+    } catch (error) {
+      console.error('Failed to load transactions:', error)
     } finally {
       setLoading(false)
     }
@@ -48,11 +92,15 @@ export default function UserDashboard() {
 
   function getDateRange() {
     const today = new Date()
-    today.setHours(0, 0, 0, 0)
+    today.setHours(0, 0, 0, 0) // start of today
+
+    // Always use End of Today as the default end point to include current day transactions
+    const endOfToday = new Date(today)
+    endOfToday.setHours(23, 59, 59, 999)
 
     switch (dateFilter) {
       case 'today':
-        return { start: today, end: new Date() }
+        return { start: today, end: endOfToday }
       case 'yesterday':
         const yesterday = new Date(today)
         yesterday.setDate(yesterday.getDate() - 1)
@@ -62,11 +110,11 @@ export default function UserDashboard() {
       case 'last7days':
         const week = new Date(today)
         week.setDate(week.getDate() - 7)
-        return { start: week, end: new Date() }
+        return { start: week, end: endOfToday }
       case 'last30days':
         const month = new Date(today)
         month.setDate(month.getDate() - 30)
-        return { start: month, end: new Date() }
+        return { start: month, end: endOfToday }
       case 'custom':
         if (customStartDate && customEndDate) {
           const start = new Date(customStartDate)
@@ -75,26 +123,20 @@ export default function UserDashboard() {
           end.setHours(23, 59, 59, 999)
           return { start, end }
         }
-        return null
+        return { start: null, end: null }
+      case 'all':
       default:
-        return null
+        return { start: null, end: null } // All time
     }
   }
 
   // Group transactions by product and sum quantities
-  const filteredTransactions = transactions
+  // Group transactions by product and sum quantities
+  const transactionsToDisplay = filteredTransactions
     .filter(t => {
-      // Show "taken from warehouse" transactions (RECEIVE)
-      // We exclude 'TRANSFER' (to customer) and 'RETURN' (to warehouse) from this specific table
-      // because this table aggregates "Stock Taken".
-      if (t.type !== 'RECEIVE') return false
-
-      // Date filter
-      const dateRange = getDateRange()
-      if (dateRange) {
-        const txDate = new Date(t.created_at)
-        if (txDate < dateRange.start || txDate > dateRange.end) return false
-      }
+      // Show "taken from warehouse" transactions (TRANSFER)
+      // We exclude 'RETURN' (to warehouse) from this specific table because this table aggregates "Stock Taken".
+      if (t.type !== 'TRANSFER') return false
 
       // Search filter
       if (searchQuery.trim()) {
@@ -106,7 +148,7 @@ export default function UserDashboard() {
     })
 
   // Aggregate by product
-  const aggregatedData = filteredTransactions.reduce((acc, t) => {
+  const aggregatedData = transactionsToDisplay.reduce((acc, t) => {
     const key = t.product_id
     if (!acc[key]) {
       acc[key] = {

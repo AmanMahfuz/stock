@@ -1,11 +1,21 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import client, { fetchUsers, fetchProducts, createTransfer, getCurrentUser } from '../services/api'
+import { fetchUsers, fetchProducts, createUserTransaction } from '../services/api'
 import Sidebar from '../components/Sidebar'
 import UserSidebar from '../components/UserSidebar'
 import BarcodeScanner from '../components/BarcodeScanner'
 
 import MobileHeader from '../components/MobileHeader'
+
+// Get user synchronously from localStorage  
+function getUserFromStorage() {
+  try {
+    const stored = localStorage.getItem('tsm_user')
+    return stored ? JSON.parse(stored) : null
+  } catch {
+    return null
+  }
+}
 
 export default function Transfer() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -17,7 +27,7 @@ export default function Transfer() {
   const [manualSKU, setManualSKU] = useState('')
   const [viewingProduct, setViewingProduct] = useState(null) // New state for verification
 
-  const currentUser = getCurrentUser()
+  const currentUser = getUserFromStorage()
   const isAdmin = currentUser?.role === 'ADMIN'
   const location = useLocation()
 
@@ -83,28 +93,28 @@ export default function Transfer() {
     setItems(prev => prev.filter(i => i.id !== id))
   }
 
+
   async function handleSubmit() {
-    if (isAdmin && !toUserId) return alert('Select a recipient')
-    if (items.length === 0) return alert('Add items')
+    if (isAdmin && !toUserId) return alert('Select which user is transferring stock')
+    if (items.length === 0) return alert('Add items to transfer')
 
     try {
-      if (isAdmin) {
-        await createTransfer({
-          toUserId,
-          items: items.map(i => ({ productId: i.id, qty: i.qty }))
+      // Process each item as a separate transaction
+      for (const item of items) {
+        await createUserTransaction({
+          user_id: isAdmin ? toUserId : undefined, // Admin can specify user, regular user uses their own
+          product_id: item.id,
+          type: 'TRANSFER',
+          quantity: item.qty,
+          customer_name: null // Job/customer name removed as requested
         })
-        alert('✅ Stock Transferred!')
-      } else {
-        // User taking stock from warehouse (Adds to inventory)
-        await client.post('/take-stock', {
-          items: items.map(i => ({ productId: i.id, qty: i.qty }))
-        })
-        alert('✅ Stock Taken from Warehouse!')
       }
+
+      alert('✅ Stock Transferred Successfully!')
       setItems([])
       setToUserId('')
     } catch (e) {
-      const errorMessage = e.response?.data?.message || e.message || 'Transaction failed'
+      const errorMessage = e.message || 'Transaction failed'
       alert(`❌ ${errorMessage}`)
     }
   }

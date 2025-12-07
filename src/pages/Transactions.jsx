@@ -13,18 +13,67 @@ export default function Transactions() {
     const [loading, setLoading] = useState(true)
     const [searchQuery, setSearchQuery] = useState('')
 
-    useEffect(() => {
-        loadTransactions()
-    }, [])
+    const [dateFilter, setDateFilter] = useState('today')
+    const [customStartDate, setCustomStartDate] = useState('')
+    const [customEndDate, setCustomEndDate] = useState('')
 
-    async function loadTransactions() {
+    useEffect(() => {
+        const { start, end } = getDateRange()
+        loadTransactions(start, end)
+    }, [dateFilter, customStartDate, customEndDate])
+
+    async function loadTransactions(start, end) {
+        // Avoid double fetching if custom dates aren't ready
+        if (dateFilter === 'custom' && (!start || !end)) return
+
         try {
-            const data = await getUserTransactions()
+            setLoading(true)
+            const dateStart = start ? start.toISOString() : null
+            const dateEnd = end ? end.toISOString() : null
+
+            const data = await getUserTransactions(dateStart, dateEnd)
             setTransactions(data)
         } catch (error) {
             console.error('Failed to load transactions:', error)
         } finally {
             setLoading(false)
+        }
+    }
+
+    function getDateRange() {
+        const today = new Date()
+        today.setHours(0, 0, 0, 0) // start of today
+
+        // Always use End of Today as the default end point to include current day transactions
+        const endOfToday = new Date(today)
+        endOfToday.setHours(23, 59, 59, 999)
+
+        switch (dateFilter) {
+            case 'today':
+                return { start: today, end: endOfToday }
+            case 'yesterday':
+                const yesterday = new Date(today)
+                yesterday.setDate(yesterday.getDate() - 1)
+                const yesterdayEnd = new Date(yesterday)
+                yesterdayEnd.setHours(23, 59, 59, 999)
+                return { start: yesterday, end: yesterdayEnd }
+            case 'last7days':
+                const week = new Date(today)
+                week.setDate(week.getDate() - 7)
+                return { start: week, end: endOfToday }
+            case 'last30days':
+                const month = new Date(today)
+                month.setDate(month.getDate() - 30)
+                return { start: month, end: endOfToday }
+            case 'custom':
+                if (!customStartDate || !customEndDate) return { start: null, end: null }
+                return {
+                    start: new Date(customStartDate),
+                    end: new Date(new Date(customEndDate).setHours(23, 59, 59, 999))
+                }
+            case 'all':
+            default:
+                return { start: null, end: null }
         }
     }
 
@@ -51,8 +100,52 @@ export default function Transactions() {
                             <p className="text-zinc-500 dark:text-zinc-400">View all your transfers and returns</p>
                         </div>
 
-                        {/* Search */}
-                        <div className="mb-6">
+                        {/* Date Filter & Search */}
+                        <div className="mb-6 space-y-4">
+                            {/* Date Filter Bar */}
+                            <div className="bg-white dark:bg-[#191714] rounded-lg border border-zinc-200 dark:border-zinc-800 p-4">
+                                <div className="flex flex-col md:flex-row md:items-center gap-4">
+                                    <div className="flex items-center gap-4 w-full md:w-auto">
+                                        <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Period:</label>
+                                        <select
+                                            value={dateFilter}
+                                            onChange={(e) => setDateFilter(e.target.value)}
+                                            className="flex-1 md:flex-none px-4 py-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-sm text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-primary/20 min-w-[200px]"
+                                        >
+                                            <option value="today">Today</option>
+                                            <option value="yesterday">Yesterday</option>
+                                            <option value="last7days">Last 7 Days</option>
+                                            <option value="last30days">Last 30 Days</option>
+                                            <option value="all">All Time</option>
+                                            <option value="custom">Custom Range</option>
+                                        </select>
+                                    </div>
+
+                                    {dateFilter === 'custom' && (
+                                        <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
+                                            <div className="flex items-center gap-2">
+                                                <label className="text-sm text-zinc-600 dark:text-zinc-400">From:</label>
+                                                <input
+                                                    type="date"
+                                                    value={customStartDate}
+                                                    onChange={e => setCustomStartDate(e.target.value)}
+                                                    className="w-full px-3 py-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-sm text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-primary/20"
+                                                />
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <label className="text-sm text-zinc-600 dark:text-zinc-400">To:</label>
+                                                <input
+                                                    type="date"
+                                                    value={customEndDate}
+                                                    onChange={e => setCustomEndDate(e.target.value)}
+                                                    className="w-full px-3 py-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-sm text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-primary/20"
+                                                />
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
                             <div className="relative">
                                 <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400">search</span>
                                 <input

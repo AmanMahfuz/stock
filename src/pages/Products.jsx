@@ -11,7 +11,16 @@ export default function Products() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState(null)
-  const [form, setForm] = useState({ name: '', category: '', size: '', purchasePrice: '', sellingPrice: '', stock: '', barcode: '', image: '', width: '', height: '' })
+  const [form, setForm] = useState({
+    name: '',
+    category: '',
+    size: '',
+    buying_price: '',
+    selling_price: '',
+    stock_qty: '',
+    barcode: '',
+    image_url: ''
+  })
   const [query, setQuery] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('All Categories')
   const [confirmOpen, setConfirmOpen] = useState(false)
@@ -24,41 +33,56 @@ export default function Products() {
 
   function openAdd() {
     setEditing(null)
-    setForm({ name: '', category: '', size: '', purchasePrice: '', sellingPrice: '', stock: '', barcode: '', image: '', width: '', height: '' })
+    setForm({
+      name: '',
+      category: '',
+      size: '',
+      buying_price: '',
+      selling_price: '',
+      stock_qty: '',
+      barcode: '',
+      image_url: ''
+    })
     setShowForm(true)
   }
 
   function handleScan(code) {
+    // Convert to string to be safe
+    const barcodeStr = String(code || '')
+
     setShowScanner(false)
-    const existing = products.find(p => p.barcode === code)
+
+    // If form is open (adding/editing), just populate the barcode
+    if (showForm) {
+      setForm(prev => ({ ...prev, barcode: barcodeStr }))
+      return
+    }
+
+    // Otherwise, search for existing product
+    const existing = products.find(p => p.barcode === barcodeStr)
     if (existing) {
-      setQuery(code)
+      setQuery(barcodeStr)
       alert(`Product "${existing.name}" already exists.`)
     } else {
       setEditing(null)
-      setForm({ name: '', category: '', size: '', purchasePrice: '', sellingPrice: '', stock: '', barcode: code, image: '' })
+      setForm({ name: '', category: '', size: '', buying_price: '', selling_price: '', stock_qty: '', barcode: barcodeStr, image_url: '' })
       setShowForm(true)
     }
   }
 
-  function onEdit(p) {
-    setEditing(p)
-    // Parse size like "24×24" into width and height
-    const sizeParts = p.size?.split(/[×x*]/) || []
-    const width = sizeParts[0]?.trim() || ''
-    const height = sizeParts[1]?.trim() || ''
+  function openEdit(p) {
+    if (!p) return
 
+    setEditing(p)
     setForm({
       name: p.name || '',
       category: p.category || '',
       size: p.size || '',
-      purchasePrice: p.purchasePrice || '',
-      sellingPrice: p.sellingPrice || '',
-      stock: p.stock || '',
+      buying_price: p.buying_price || '',
+      selling_price: p.selling_price || '',
+      stock_qty: p.stock_qty || '',
       barcode: p.barcode || '',
-      image: p.image || '',
-      width,
-      height
+      image_url: p.image_url || ''
     })
     setShowForm(true)
   }
@@ -75,30 +99,17 @@ export default function Products() {
       alert('Please select a category')
       return
     }
-    if (!form.width || !form.height) {
-      alert('Please enter both width and height for tile size')
-      return
-    }
     if (!form.barcode?.trim()) {
       alert('Please enter a barcode')
       return
     }
 
     try {
-      // Build size from width and height
-      const size = form.width && form.height ? `${form.width}×${form.height}` : form.size
-
-      // Convert * to × in size field
-      const formattedForm = {
-        ...form,
-        size: size ? size.replace(/\*/g, '×') : ''
-      }
-
       if (editing) {
-        const updated = await updateProduct(editing.id || editing.barcode, formattedForm)
+        const updated = await updateProduct(editing.id || editing.barcode, form)
         setProducts(prev => prev.map(p => (p.id === updated.id || p.barcode === updated.barcode) ? updated : p))
       } else {
-        const created = await createProduct(formattedForm)
+        const created = await createProduct(form)
         setProducts(prev => [...prev, created])
       }
       setShowForm(false)
@@ -211,13 +222,13 @@ export default function Products() {
                         <td className="px-6 py-4 text-sm font-medium text-zinc-900 dark:text-white whitespace-nowrap">{p.name || 'N/A'}</td>
                         <td className="px-6 py-4 text-sm text-zinc-900 dark:text-white whitespace-nowrap">{p.category || 'N/A'}</td>
                         <td className="px-6 py-4 text-sm text-zinc-500 dark:text-zinc-400 whitespace-nowrap">{p.size || 'N/A'}</td>
-                        <td className="px-6 py-4 text-sm text-zinc-900 dark:text-white whitespace-nowrap">${p.sellingPrice || '0.00'} / sq ft</td>
-                        <td className="px-6 py-4 text-sm text-zinc-900 dark:text-white whitespace-nowrap">{p.stock || 0}</td>
+                        <td className="px-6 py-4 text-sm text-zinc-900 dark:text-white whitespace-nowrap">${p.selling_price || '0.00'} / sq ft</td>
+                        <td className="px-6 py-4 text-sm text-zinc-900 dark:text-white whitespace-nowrap">{p.stock_qty || 0}</td>
                         <td className="px-6 py-4 text-sm text-zinc-500 dark:text-zinc-400 whitespace-nowrap">{p.barcode || 'N/A'}</td>
                         <td className="px-6 py-4">
                           <div className="flex items-center justify-center gap-2">
                             <button
-                              onClick={() => onEdit(p)}
+                              onClick={() => openEdit(p)}
                               className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded transition-colors"
                             >
                               <span className="material-symbols-outlined text-zinc-600 dark:text-zinc-400 text-lg">edit</span>
@@ -289,51 +300,56 @@ export default function Products() {
                   value={form.category}
                   onChange={e => setForm({ ...form, category: e.target.value })}
                 >
-                  <option value="">Select a category</option>
+                  <option value="">Select Category</option>
                   <option value="Marble Look">Marble Look</option>
-                  <option value="Porcelain">Porcelain</option>
-                  <option value="Ceramic">Ceramic</option>
                   <option value="Wood Look">Wood Look</option>
-                  <option value="Natural Stone">Natural Stone</option>
+                  <option value="Concrete Look">Concrete Look</option>
+                  <option value="Stone Look">Stone Look</option>
+                  <option value="Granite Look">Granite Look</option>
+                  <option value="Decorative">Decorative</option>
+                  <option value="Solid Color">Solid Color</option>
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">Tile Size *</label>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="number"
-                    placeholder="Width"
-                    className="auth-input flex-1"
-                    required
-                    value={form.width}
-                    onChange={e => setForm({ ...form, width: e.target.value })}
-                  />
-                  <span className="text-zinc-500 dark:text-zinc-400 text-lg font-bold">×</span>
-                  <input
-                    type="number"
-                    placeholder="Height"
-                    className="auth-input flex-1"
-                    required
-                    value={form.height}
-                    onChange={e => setForm({ ...form, height: e.target.value })}
-                  />
-                </div>
+                <label className="block mb-2 text-sm font-bold text-zinc-700 dark:text-zinc-300">Size (e.g., 24×24)</label>
+                <input
+                  className="auth-input"
+                  placeholder="e.g., 24×24 or 12×24"
+                  value={form.size}
+                  onChange={e => setForm({ ...form, size: e.target.value })}
+                />
               </div>
               <div>
-                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">Purchase Price</label>
-                <input type="number" step="0.01" className="auth-input" value={form.purchasePrice} onChange={e => setForm({ ...form, purchasePrice: e.target.value })} />
+                <label className="block mb-2 text-sm font-bold text-zinc-700 dark:text-zinc-300">Buying Price</label>
+                <input type="number" step="0.01" className="auth-input" value={form.buying_price} onChange={e => setForm({ ...form, buying_price: e.target.value })} />
               </div>
               <div>
-                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">Selling Price</label>
-                <input type="number" step="0.01" className="auth-input" value={form.sellingPrice} onChange={e => setForm({ ...form, sellingPrice: e.target.value })} />
+                <label className="block mb-2 text-sm font-bold text-zinc-700 dark:text-zinc-300">Selling Price</label>
+                <input type="number" step="0.01" className="auth-input" value={form.selling_price} onChange={e => setForm({ ...form, selling_price: e.target.value })} />
               </div>
               <div>
-                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">Initial Stock</label>
-                <input type="number" className="auth-input" value={form.stock} onChange={e => setForm({ ...form, stock: e.target.value })} />
+                <label className="block mb-2 text-sm font-bold text-zinc-700 dark:text-zinc-300">Stock Quantity</label>
+                <input type="number" className="auth-input" value={form.stock_qty} onChange={e => setForm({ ...form, stock_qty: e.target.value })} />
               </div>
               <div>
                 <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">Barcode *</label>
-                <input className="auth-input" required value={form.barcode} onChange={e => setForm({ ...form, barcode: e.target.value })} />
+                <div className="flex gap-2">
+                  <input
+                    className="auth-input flex-1"
+                    required
+                    value={form.barcode}
+                    onChange={e => setForm({ ...form, barcode: e.target.value })}
+                    placeholder="Enter or scan barcode"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowScanner(true)}
+                    className="px-4 py-2 bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white rounded-lg font-medium hover:bg-zinc-200 dark:hover:bg-zinc-700 flex items-center gap-2"
+                  >
+                    <span className="material-symbols-outlined text-xl">qr_code_scanner</span>
+                    Scan
+                  </button>
+                </div>
               </div>
 
               <div className="col-span-2 flex gap-3 mt-4">

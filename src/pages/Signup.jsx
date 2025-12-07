@@ -24,7 +24,8 @@ export default function Signup() {
       })
       navigate('/user')
     } catch (err) {
-      setError(err?.response?.data?.message || 'Signup failed')
+      console.error('Signup error:', err)
+      setError(err?.message || err?.response?.data?.message || 'Signup failed')
     } finally { setLoading(false) }
   }
 
