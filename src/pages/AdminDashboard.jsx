@@ -236,6 +236,7 @@ export default function AdminDashboard() {
       <Sidebar
         className={`${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0`}
         onClose={() => setMobileMenuOpen(false)}
+        isOpen={mobileMenuOpen}
       />
       <div className="flex-1 flex flex-col min-w-0 lg:ml-64">
         <MobileHeader onMenuClick={() => setMobileMenuOpen(true)} title="Admin Dashboard" />

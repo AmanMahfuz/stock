@@ -87,6 +87,7 @@ export default function Transactions() {
             <UserSidebar
                 className={`${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0`}
                 onClose={() => setMobileMenuOpen(false)}
+                isOpen={mobileMenuOpen}
             />
 
             {/* Main Content */}

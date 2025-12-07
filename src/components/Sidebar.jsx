@@ -2,7 +2,7 @@ import React from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { logout } from '../services/api'
 
-export default function Sidebar({ className, onClose }) {
+export default function Sidebar({ className, onClose, isOpen }) {
     const location = useLocation()
     const navigate = useNavigate()
 
@@ -22,7 +22,7 @@ export default function Sidebar({ className, onClose }) {
     return (
         <>
             {/* Backdrop for mobile */}
-            {className && className.includes('translate-x-0') && (
+            {isOpen && (
                 <div
                     className="fixed inset-0 bg-black/50 z-40 lg:hidden"
                     onClick={onClose}

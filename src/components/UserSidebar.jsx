@@ -12,7 +12,7 @@ function getUserFromStorage() {
     }
 }
 
-export default function UserSidebar({ className, onClose }) {
+export default function UserSidebar({ className, onClose, isOpen }) {
     const location = useLocation()
     const navigate = useNavigate()
     const user = getUserFromStorage()
@@ -27,7 +27,7 @@ export default function UserSidebar({ className, onClose }) {
     return (
         <>
             {/* Backdrop for mobile */}
-            {className && className.includes('translate-x-0') && (
+            {isOpen && (
                 <div
                     className="fixed inset-0 bg-black/50 z-40 lg:hidden"
                     onClick={onClose}

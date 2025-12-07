@@ -35,18 +35,19 @@ export default function Profile() {
     return (
         <div className="flex min-h-screen bg-zinc-50 dark:bg-[#1c1a16]">
             {/* Conditional Sidebar */}
-            {isAdmin ? (
+            {user?.role === 'ADMIN' ? (
                 <Sidebar
                     className={`${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0`}
                     onClose={() => setMobileMenuOpen(false)}
+                    isOpen={mobileMenuOpen}
                 />
             ) : (
                 <UserSidebar
                     className={`${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0`}
                     onClose={() => setMobileMenuOpen(false)}
+                    isOpen={mobileMenuOpen}
                 />
             )}
-
             {/* Main Content */}
             <div className="flex-1 flex flex-col min-w-0 lg:ml-64">
                 <MobileHeader onMenuClick={() => setMobileMenuOpen(true)} title="My Profile" />

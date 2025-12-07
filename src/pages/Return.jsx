@@ -214,15 +214,15 @@ export default function ReturnPage() {
       {/* Show correct sidebar based on role */}
       {currentUser?.role === 'ADMIN' ? (
         <Sidebar
-          className="hidden lg:flex"
-          mobileMenuOpen={mobileMenuOpen}
-          onMobileMenuClose={() => setMobileMenuOpen(false)}
+          className={`${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0`}
+          onClose={() => setMobileMenuOpen(false)}
+          isOpen={mobileMenuOpen}
         />
       ) : (
         <UserSidebar
-          className="hidden lg:flex"
-          mobileMenuOpen={mobileMenuOpen}
+          className={`${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0`}
           onClose={() => setMobileMenuOpen(false)}
+          isOpen={mobileMenuOpen}
         />
       )}
 
