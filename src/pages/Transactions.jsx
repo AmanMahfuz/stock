@@ -167,51 +167,88 @@ export default function Transactions() {
                                         Loading transactions...
                                     </div>
                                 ) : filteredTransactions.length > 0 ? (
-                                    <table className="w-full">
-                                        <thead>
-                                            <tr className="border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50">
-                                                <th className="text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase px-6 py-4 whitespace-nowrap">Date & Time</th>
-                                                <th className="text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase px-6 py-4 whitespace-nowrap">Product</th>
-                                                <th className="text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase px-6 py-4 whitespace-nowrap">Type</th>
-                                                <th className="text-center text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase px-6 py-4 whitespace-nowrap">Quantity</th>
-                                                <th className="text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase px-6 py-4 whitespace-nowrap">Customer</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
+                                    <>
+                                        {/* Mobile Card View */}
+                                        <div className="md:hidden space-y-4 p-4">
                                             {filteredTransactions.map(tx => (
-                                                <tr key={tx.id} className="border-b border-zinc-100 dark:border-zinc-800/50 hover:bg-zinc-50 dark:hover:bg-zinc-900/30 transition-colors">
-                                                    <td className="px-6 py-4 text-sm text-zinc-900 dark:text-white whitespace-nowrap">
-                                                        {new Date(tx.created_at).toLocaleString()}
-                                                    </td>
-                                                    <td className="px-6 py-4">
+                                                <div key={tx.id} className="bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-4">
+                                                    <div className="flex justify-between items-start mb-2">
                                                         <div>
-                                                            <div className="text-sm font-medium text-zinc-900 dark:text-white">{tx.product_name || 'Unknown'}</div>
-                                                            <div className="text-xs text-zinc-500 dark:text-zinc-400 whitespace-nowrap">{tx.product_barcode || 'N/A'}</div>
+                                                            <div className="font-bold text-zinc-900 dark:text-white">{tx.product_name || 'Unknown'}</div>
+                                                            <div className="text-xs text-zinc-500">{tx.product_barcode || 'N/A'}</div>
                                                         </div>
-                                                    </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap">
-                                                        <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${tx.type === 'TRANSFER'
+                                                        <span className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-bold whitespace-nowrap ${tx.type === 'TRANSFER'
                                                             ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'
                                                             : tx.type === 'RETURN'
                                                                 ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400'
                                                                 : 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
                                                             }`}>
-                                                            {tx.type === 'TRANSFER'
-                                                                ? '→ To Customer'
-                                                                : tx.type === 'RETURN'
-                                                                    ? '↺ Return'
-                                                                    : '↓ Received'
-                                                            }
+                                                            {tx.type === 'TRANSFER' ? '→ Out' : tx.type === 'RETURN' ? '↺ In' : '↓ Rec'}
                                                         </span>
-                                                    </td>
-                                                    <td className="px-6 py-4 text-center text-sm font-medium text-zinc-900 dark:text-white whitespace-nowrap">{tx.quantity}</td>
-                                                    <td className="px-6 py-4 text-sm text-zinc-500 dark:text-zinc-400 whitespace-nowrap">
-                                                        {tx.customer_name || '-'}
-                                                    </td>
-                                                </tr>
+                                                    </div>
+                                                    <div className="flex justify-between items-center text-sm mt-3">
+                                                        <div className="text-zinc-500 dark:text-zinc-400">
+                                                            <div>{new Date(tx.created_at).toLocaleDateString()}</div>
+                                                            <div className="text-xs">{new Date(tx.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                                                        </div>
+                                                        <div className="text-right">
+                                                            <div className="font-bold text-lg text-zinc-900 dark:text-white">{tx.quantity} qty</div>
+                                                            {tx.customer_name && <div className="text-xs text-zinc-500">{tx.customer_name}</div>}
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             ))}
-                                        </tbody>
-                                    </table>
+                                        </div>
+
+                                        {/* Desktop Table View */}
+                                        <div className="hidden md:block">
+                                            <table className="w-full">
+                                                <thead>
+                                                    <tr className="border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50">
+                                                        <th className="text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase px-6 py-4 whitespace-nowrap">Date & Time</th>
+                                                        <th className="text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase px-6 py-4 whitespace-nowrap">Product</th>
+                                                        <th className="text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase px-6 py-4 whitespace-nowrap">Type</th>
+                                                        <th className="text-center text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase px-6 py-4 whitespace-nowrap">Quantity</th>
+                                                        <th className="text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase px-6 py-4 whitespace-nowrap">Customer</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {filteredTransactions.map(tx => (
+                                                        <tr key={tx.id} className="border-b border-zinc-100 dark:border-zinc-800/50 hover:bg-zinc-50 dark:hover:bg-zinc-900/30 transition-colors">
+                                                            <td className="px-6 py-4 text-sm text-zinc-900 dark:text-white whitespace-nowrap">
+                                                                {new Date(tx.created_at).toLocaleString()}
+                                                            </td>
+                                                            <td className="px-6 py-4">
+                                                                <div>
+                                                                    <div className="text-sm font-medium text-zinc-900 dark:text-white">{tx.product_name || 'Unknown'}</div>
+                                                                    <div className="text-xs text-zinc-500 dark:text-zinc-400 whitespace-nowrap">{tx.product_barcode || 'N/A'}</div>
+                                                                </div>
+                                                            </td>
+                                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                                <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${tx.type === 'TRANSFER'
+                                                                    ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'
+                                                                    : tx.type === 'RETURN'
+                                                                        ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400'
+                                                                        : 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+                                                                    }`}>
+                                                                    {tx.type === 'TRANSFER'
+                                                                        ? '→ To Customer'
+                                                                        : tx.type === 'RETURN'
+                                                                            ? '↺ Return'
+                                                                            : '↓ Received'
+                                                                    }
+                                                                </span>
+                                                            </td>
+                                                            <td className="px-6 py-4 text-center text-sm font-medium text-zinc-900 dark:text-white whitespace-nowrap">{tx.quantity}</td>
+                                                            <td className="px-6 py-4 text-sm text-zinc-500 dark:text-zinc-400 whitespace-nowrap">
+                                                                {tx.customer_name || '-'}
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </>
                                 ) : (
                                     <div className="text-center py-12 text-zinc-500 dark:text-zinc-400">
                                         {searchQuery ? `No transactions found for "${searchQuery}"` : 'No transactions yet'}

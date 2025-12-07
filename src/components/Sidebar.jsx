@@ -28,7 +28,7 @@ export default function Sidebar({ className, onClose, isOpen }) {
                     onClick={onClose}
                 />
             )}
-            <aside className={`flex w-64 flex-col border-r border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#191714] p-4 fixed left-0 top-0 h-screen z-50 transition-transform duration-300 ${className || 'hidden lg:flex'}`}>
+            <aside className={`flex w-64 flex-col border-r border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#191714] p-4 pb-24 lg:pb-4 fixed left-0 top-0 h-screen z-50 transition-transform duration-300 ${className || 'hidden lg:flex'}`}>
                 {/* Logo */}
                 <div className="flex items-center gap-2 mb-8">
                     <img src="/smart-florring-logo-main.png" alt="Smart Floor" className="w-8 h-8 object-contain" />

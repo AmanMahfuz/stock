@@ -193,13 +193,22 @@ export default function UserDashboard() {
                 </h1>
                 <p className="text-zinc-500 dark:text-zinc-400">Here's your stock transfer summary.</p>
               </div>
-              <button
-                onClick={() => navigate('/transfer')}
-                className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 bg-primary text-white rounded-lg font-medium hover:bg-primary/90"
-              >
-                <span className="material-symbols-outlined">add</span>
-                Transfer Stock
-              </button>
+              <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+                <button
+                  onClick={() => navigate('/return')}
+                  className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-white rounded-lg font-medium hover:bg-zinc-50 dark:hover:bg-zinc-700"
+                >
+                  <span className="material-symbols-outlined">keyboard_return</span>
+                  Return Stock
+                </button>
+                <button
+                  onClick={() => navigate('/transfer')}
+                  className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 bg-primary text-white rounded-lg font-medium hover:bg-primary/90"
+                >
+                  <span className="material-symbols-outlined">add</span>
+                  Transfer Stock
+                </button>
+              </div>
             </div>
 
             {/* Date Filter Bar */}
@@ -282,40 +291,62 @@ export default function UserDashboard() {
                 </div>
               </div>
 
-              <div className="overflow-x-auto">
-                {loading ? (
-                  <div className="text-center py-12 text-zinc-500 dark:text-zinc-400">
-                    Loading transfers...
+              {/* Transfer History List */}
+              {loading ? (
+                <div className="text-center py-12 text-zinc-500 dark:text-zinc-400">Loading transfers...</div>
+              ) : productSummary.length > 0 ? (
+                <>
+                  {/* Mobile Card View */}
+                  <div className="md:hidden space-y-4 p-4">
+                    {productSummary.map(item => (
+                      <div key={item.product_id} className="bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-4">
+                        <div className="flex justify-between items-start mb-2">
+                          <div>
+                            <div className="font-bold text-zinc-900 dark:text-white">{item.product_name || 'Unknown'}</div>
+                            <div className="text-xs text-zinc-500">{item.product_barcode || 'N/A'}</div>
+                          </div>
+                          <div className="bg-primary/10 text-primary px-2 py-1 rounded text-xs font-bold">
+                            {item.total_quantity} qty
+                          </div>
+                        </div>
+                        <div className="text-xs text-zinc-500 dark:text-zinc-400 mt-2">
+                          Across {item.transaction_count} transactions
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                ) : productSummary.length > 0 ? (
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50">
-                        <th className="text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase px-6 py-4 whitespace-nowrap">Product</th>
-                        <th className="text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase px-6 py-4 whitespace-nowrap">SKU</th>
-                        <th className="text-center text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase px-6 py-4 whitespace-nowrap">Total Qty Taken</th>
-                        <th className="text-center text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase px-6 py-4 whitespace-nowrap">Transactions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {productSummary.map(item => (
-                        <tr key={item.product_id} className="border-b border-zinc-100 dark:border-zinc-800/50 hover:bg-zinc-50 dark:hover:bg-zinc-900/30 transition-colors">
-                          <td className="px-6 py-4">
-                            <div className="font-medium text-sm text-zinc-900 dark:text-white">{item.product_name || 'Unknown'}</div>
-                          </td>
-                          <td className="px-6 py-4 text-sm text-zinc-500 dark:text-zinc-400 whitespace-nowrap">{item.product_barcode || 'N/A'}</td>
-                          <td className="px-6 py-4 text-center text-sm font-medium text-zinc-900 dark:text-white whitespace-nowrap">{item.total_quantity}</td>
-                          <td className="px-6 py-4 text-center text-sm text-zinc-500 dark:text-zinc-400 whitespace-nowrap">{item.transaction_count}</td>
+
+                  {/* Desktop Table View */}
+                  <div className="hidden md:block overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50">
+                          <th className="text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase px-6 py-4 whitespace-nowrap">Product</th>
+                          <th className="text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase px-6 py-4 whitespace-nowrap">SKU</th>
+                          <th className="text-center text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase px-6 py-4 whitespace-nowrap">Total Qty Taken</th>
+                          <th className="text-center text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase px-6 py-4 whitespace-nowrap">Transactions</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                ) : (
-                  <div className="text-center py-12 text-zinc-500 dark:text-zinc-400">
-                    {searchQuery ? `No results for "${searchQuery}"` : dateFilter !== 'all' ? 'No transfers in this period' : 'No transfers yet'}
+                      </thead>
+                      <tbody>
+                        {productSummary.map(item => (
+                          <tr key={item.product_id} className="border-b border-zinc-100 dark:border-zinc-800/50 hover:bg-zinc-50 dark:hover:bg-zinc-900/30 transition-colors">
+                            <td className="px-6 py-4">
+                              <div className="font-medium text-sm text-zinc-900 dark:text-white">{item.product_name || 'Unknown'}</div>
+                            </td>
+                            <td className="px-6 py-4 text-sm text-zinc-500 dark:text-zinc-400 whitespace-nowrap">{item.product_barcode || 'N/A'}</td>
+                            <td className="px-6 py-4 text-center text-sm font-medium text-zinc-900 dark:text-white whitespace-nowrap">{item.total_quantity}</td>
+                            <td className="px-6 py-4 text-center text-sm text-zinc-500 dark:text-zinc-400 whitespace-nowrap">{item.transaction_count}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
-                )}
-              </div>
+                </>
+              ) : (
+                <div className="text-center py-12 text-zinc-500 dark:text-zinc-400">
+                  {searchQuery ? `No results for "${searchQuery}"` : dateFilter !== 'all' ? 'No transfers in this period' : 'No transfers yet'}
+                </div>
+              )}
             </div>
 
             {/* New Section: Your Returns */}
@@ -323,9 +354,8 @@ export default function UserDashboard() {
               <div className="p-6 border-b border-zinc-200 dark:border-zinc-800">
                 <h2 className="text-xl font-bold text-zinc-900 dark:text-white">Your Returns</h2>
               </div>
-              <div className="overflow-x-auto">
+              <div>
                 {(() => {
-                  // Return Filtering Logic (Inline to keep simple)
                   const returns = transactions.filter(t =>
                     t.type === 'RETURN' &&
                     (!searchQuery || t.product_name?.toLowerCase().includes(searchQuery.toLowerCase()))
@@ -335,31 +365,54 @@ export default function UserDashboard() {
                   if (returns.length === 0) return <div className="p-6 text-center text-zinc-500">No returns found.</div>
 
                   return (
-                    <table className="w-full">
-                      <thead>
-                        <tr className="border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50">
-                          <th className="text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase px-6 py-4 whitespace-nowrap">Date</th>
-                          <th className="text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase px-6 py-4 whitespace-nowrap">Product</th>
-                          <th className="text-center text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase px-6 py-4 whitespace-nowrap">Returned Qty</th>
-                        </tr>
-                      </thead>
-                      <tbody>
+                    <>
+                      {/* Mobile Card View for Returns */}
+                      <div className="md:hidden space-y-4 p-4">
                         {returns.map(t => (
-                          <tr key={t.id} className="border-b border-zinc-100 dark:border-zinc-800/50">
-                            <td className="px-6 py-4 text-sm text-zinc-500 dark:text-zinc-400 whitespace-nowrap">
-                              {new Date(t.created_at).toLocaleDateString()}
-                            </td>
-                            <td className="px-6 py-4">
-                              <div className="font-medium text-sm text-zinc-900 dark:text-white">{t.product_name}</div>
-                              <div className="text-xs text-zinc-500 whitespace-nowrap">{t.product_barcode}</div>
-                            </td>
-                            <td className="px-6 py-4 text-center font-bold text-orange-600 dark:text-orange-400 whitespace-nowrap">
-                              {t.quantity}
-                            </td>
-                          </tr>
+                          <div key={t.id} className="bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-4">
+                            <div className="flex justify-between items-start mb-2">
+                              <div>
+                                <div className="font-medium text-zinc-900 dark:text-white">{t.product_name}</div>
+                                <div className="text-xs text-zinc-500">{t.product_barcode}</div>
+                              </div>
+                              <div className="text-right">
+                                <span className="text-sm font-bold text-orange-600 dark:text-orange-400">{t.quantity} returned</span>
+                                <div className="text-xs text-zinc-400 mt-1">{new Date(t.created_at).toLocaleDateString()}</div>
+                              </div>
+                            </div>
+                          </div>
                         ))}
-                      </tbody>
-                    </table>
+                      </div>
+
+                      {/* Desktop Table View for Returns */}
+                      <div className="hidden md:block overflow-x-auto">
+                        <table className="w-full">
+                          <thead>
+                            <tr className="border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50">
+                              <th className="text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase px-6 py-4 whitespace-nowrap">Date</th>
+                              <th className="text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase px-6 py-4 whitespace-nowrap">Product</th>
+                              <th className="text-center text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase px-6 py-4 whitespace-nowrap">Returned Qty</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {returns.map(t => (
+                              <tr key={t.id} className="border-b border-zinc-100 dark:border-zinc-800/50 hover:bg-zinc-50 dark:hover:bg-zinc-900/30 transition-colors">
+                                <td className="px-6 py-4 text-sm text-zinc-500 dark:text-zinc-400 whitespace-nowrap">
+                                  {new Date(t.created_at).toLocaleDateString()}
+                                </td>
+                                <td className="px-6 py-4">
+                                  <div className="font-medium text-sm text-zinc-900 dark:text-white">{t.product_name}</div>
+                                  <div className="text-xs text-zinc-500 whitespace-nowrap">{t.product_barcode}</div>
+                                </td>
+                                <td className="px-6 py-4 text-center font-bold text-orange-600 dark:text-orange-400 whitespace-nowrap">
+                                  {t.quantity}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </>
                   )
                 })()}
               </div>

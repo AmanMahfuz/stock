@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import {
   fetchProducts,
   getDashboardStats,
@@ -19,6 +19,7 @@ import Sidebar from '../components/Sidebar'
 import MobileHeader from '../components/MobileHeader'
 
 export default function AdminDashboard() {
+  const navigate = useNavigate()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [activeTab, setActiveTab] = useState('overview') // overview, products, categories, activities
   const [products, setProducts] = useState([])
@@ -359,7 +360,16 @@ export default function AdminDashboard() {
 
               {/* Transaction / Activity Section */}
               <div>
-                <h2 className="text-xl font-bold text-zinc-900 dark:text-white mb-4">Daily Activities & Transactions</h2>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+                  <h2 className="text-xl font-bold text-zinc-900 dark:text-white">Daily Activities & Transactions</h2>
+                  <button
+                    onClick={() => navigate('/return')}
+                    className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-white rounded-lg font-medium hover:bg-zinc-50 dark:hover:bg-zinc-700"
+                  >
+                    <span className="material-symbols-outlined">keyboard_return</span>
+                    Return Stock
+                  </button>
+                </div>
 
                 {/* Controls */}
                 <div className="bg-white dark:bg-[#191714] p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 flex flex-col md:flex-row gap-4 justify-between items-center mb-6">
@@ -414,7 +424,44 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* Transaction Table */}
-                <div className="bg-white dark:bg-[#191714] rounded-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden">
+                {/* Mobile Activity Cards */}
+                <div className="md:hidden space-y-4">
+                  {filteredTransactions.length === 0 ? (
+                    <div className="text-center py-12 text-zinc-500">No activity found</div>
+                  ) : (
+                    filteredTransactions.map(t => (
+                      <div key={t.id} className="bg-white dark:bg-[#191714] p-4 rounded-xl border border-zinc-200 dark:border-zinc-800">
+                        <div className="flex justify-between items-start mb-2">
+                          <div>
+                            <div className="font-bold text-zinc-900 dark:text-white">{t.product_name || 'Unknown Product'}</div>
+                            <div className="text-xs text-zinc-500">{t.product_barcode}</div>
+                          </div>
+                          <span className={`px-2 py-1 rounded text-xs font-bold ${t.type === 'RETURN'
+                            ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                            : t.type === 'RECEIVE'
+                              ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+                              : 'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300'
+                            }`}>
+                            {t.type === 'TRANSFER' ? 'USED' : t.type}
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-end mt-3">
+                          <div className="text-sm">
+                            <div className="text-zinc-900 dark:text-white font-medium">{t.user_name}</div>
+                            <div className="text-xs text-zinc-500">{new Date(t.created_at).toLocaleString()}</div>
+                          </div>
+                          <div className="text-right">
+                            <div className="font-bold text-lg text-zinc-900 dark:text-white">{t.quantity}</div>
+                            {t.customer_name && <div className="text-xs text-zinc-500">{t.customer_name}</div>}
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                {/* Desktop Activity Table */}
+                <div className="hidden md:block bg-white dark:bg-[#191714] rounded-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden">
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm text-left">
                       <thead className="bg-zinc-50 dark:bg-zinc-900/50 text-zinc-500 dark:text-zinc-400 uppercase text-xs">
@@ -517,11 +564,60 @@ export default function AdminDashboard() {
               </div>
 
               {/* Category List */}
+              {/* Category List */}
               <div className="bg-white dark:bg-[#191714] rounded-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden shadow-sm">
                 <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50">
                   <h3 className="font-bold text-zinc-900 dark:text-white">Existing Categories</h3>
                 </div>
-                <div className="overflow-x-auto">
+
+                {categories.length === 0 && (
+                  <div className="p-8 text-center text-zinc-500 dark:text-zinc-400">
+                    <span className="material-symbols-outlined text-4xl mb-2 opacity-50">toc</span>
+                    <p>No categories found. Create your first one above!</p>
+                  </div>
+                )}
+
+                {/* Mobile Cards for Categories */}
+                <div className="md:hidden divide-y divide-zinc-100 dark:divide-zinc-800">
+                  {categories.map(c => (
+                    <div key={c.id} className="p-4 flex items-center justify-between">
+                      {editingCategory?.id === c.id ? (
+                        <div className="flex-1 flex gap-2">
+                          <input
+                            autoFocus
+                            className="w-full px-3 py-2 bg-white dark:bg-zinc-900 border border-primary rounded-lg outline-none text-sm"
+                            value={editingCategory.name}
+                            onChange={e => setEditingCategory({ ...editingCategory, name: e.target.value })}
+                            onBlur={() => handleUpdateCategory(c.id, editingCategory.name)} // Optional: save on blur
+                          />
+                          <button onClick={() => handleUpdateCategory(c.id, editingCategory.name)} className="p-2 text-green-600">
+                            <span className="material-symbols-outlined">check</span>
+                          </button>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-400">
+                              <span className="material-symbols-outlined text-sm">category</span>
+                            </div>
+                            <span className="font-medium text-zinc-900 dark:text-white">{c.name}</span>
+                          </div>
+                          <div className="flex gap-1">
+                            <button onClick={() => setEditingCategory(c)} className="p-2 text-zinc-400 hover:text-blue-500">
+                              <span className="material-symbols-outlined">edit</span>
+                            </button>
+                            <button onClick={() => handleDeleteCategory(c.id)} className="p-2 text-zinc-400 hover:text-red-500">
+                              <span className="material-symbols-outlined">delete</span>
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Desktop Table for Categories */}
+                <div className="hidden md:block overflow-x-auto">
                   <table className="w-full text-sm text-left">
                     <thead className="bg-zinc-50 dark:bg-zinc-900/50 text-zinc-500 dark:text-zinc-400 uppercase text-xs font-semibold">
                       <tr>
@@ -588,13 +684,6 @@ export default function AdminDashboard() {
                       ))}
                     </tbody>
                   </table>
-
-                  {categories.length === 0 && (
-                    <div className="p-8 text-center text-zinc-500 dark:text-zinc-400">
-                      <span className="material-symbols-outlined text-4xl mb-2 opacity-50">toc</span>
-                      <p>No categories found. Create your first one above!</p>
-                    </div>
-                  )}
                 </div>
               </div>
             </div>
@@ -661,8 +750,38 @@ export default function AdminDashboard() {
               )}
 
               {/* Product Table */}
+              {/* Product Table */}
               <div className="bg-white dark:bg-[#191714] rounded-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden">
-                <div className="overflow-x-auto">
+                {/* Mobile Cards for Products */}
+                <div className="md:hidden space-y-2 p-2 divide-y divide-zinc-100 dark:divide-zinc-800">
+                  {products
+                    .filter(p => !selectedCategoryFilter || p.category === selectedCategoryFilter)
+                    .map(p => (
+                      <div key={p.id} className="p-4 bg-zinc-50 dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 mb-2">
+                        <div className="flex justify-between items-start mb-2">
+                          <div>
+                            <div className="font-bold text-zinc-900 dark:text-white">{p.name}</div>
+                            <div className="text-xs text-zinc-500">{p.barcode}</div>
+                            <div className="text-xs text-zinc-400 mt-1">{p.category}</div>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-sm font-bold">{p.stock_qty || p.stock} left</div>
+                          </div>
+                        </div>
+                        <div className="flex justify-end gap-2 mt-4 pt-2 border-t border-zinc-200 dark:border-zinc-700">
+                          <button onClick={() => openEditProduct(p)} className="flex items-center gap-1 text-sm text-blue-600">
+                            <span className="material-symbols-outlined text-sm">edit</span> Edit
+                          </button>
+                          <button onClick={() => handleDeleteProduct(p.id)} className="flex items-center gap-1 text-sm text-red-600">
+                            <span className="material-symbols-outlined text-sm">delete</span> Delete
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+
+                {/* Desktop Product Table */}
+                <div className="hidden md:block overflow-x-auto">
                   <table className="w-full text-sm text-left">
                     <thead className="bg-zinc-50 dark:bg-zinc-900/50 text-zinc-500 dark:text-zinc-400 uppercase text-xs">
                       <tr>
@@ -676,7 +795,7 @@ export default function AdminDashboard() {
                       {products
                         .filter(p => !selectedCategoryFilter || p.category === selectedCategoryFilter)
                         .map(p => (
-                          <tr key={p.id} className="border-b border-zinc-100 dark:border-zinc-800/50">
+                          <tr key={p.id} className="border-b border-zinc-100 dark:border-zinc-800/50 hover:bg-zinc-50 dark:hover:bg-zinc-900/30 transition-colors">
                             <td className="px-6 py-4 font-medium text-zinc-900 dark:text-white">
                               {p.name} <br /> <span className="text-zinc-500 font-normal text-xs">{p.barcode}</span>
                             </td>

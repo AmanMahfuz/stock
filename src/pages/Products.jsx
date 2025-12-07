@@ -204,7 +204,47 @@ export default function Products() {
 
             {/* Product Table */}
             <div className="bg-white dark:bg-[#191714] rounded-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden mb-6">
-              <div className="overflow-x-auto">
+              {/* Mobile Card View */}
+              <div className="md:hidden divide-y divide-zinc-100 dark:divide-zinc-800">
+                {currentProducts.map(p => (
+                  <div key={p.id || p.barcode} className="p-4 bg-white dark:bg-[#191714]">
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        <div className="font-bold text-zinc-900 dark:text-white">{p.name || 'N/A'}</div>
+                        <div className="text-xs text-zinc-500">{p.barcode || 'N/A'}</div>
+                        <div className="text-xs text-zinc-400 mt-1">{p.category || 'N/A'}</div>
+                      </div>
+                      <div className="text-right">
+                        <div className="font-bold text-zinc-900 dark:text-white">{p.stock_qty || 0}</div>
+                        <div className="text-xs text-zinc-500">stock</div>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-between items-center mt-3 pt-3 border-t border-zinc-50 dark:border-zinc-800/50">
+                      <div className="text-sm font-medium text-zinc-900 dark:text-white">
+                        ${p.selling_price || '0.00'} <span className="text-zinc-400 font-normal text-xs">/sq ft</span>
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => openEdit(p)}
+                          className="p-2 bg-zinc-100 dark:bg-zinc-800 rounded-lg text-blue-600 dark:text-blue-400"
+                        >
+                          <span className="material-symbols-outlined text-lg">edit</span>
+                        </button>
+                        <button
+                          onClick={() => onDeleteRequest(p)}
+                          className="p-2 bg-red-50 dark:bg-red-900/20 rounded-lg text-red-600 dark:text-red-400"
+                        >
+                          <span className="material-symbols-outlined text-lg">delete</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Desktop Table View */}
+              <div className="hidden md:block overflow-x-auto">
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50">

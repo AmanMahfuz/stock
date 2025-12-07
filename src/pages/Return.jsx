@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { fetchProducts, createReturn, fetchStaffInventory } from '../services/api'
+import { fetchProducts, createReturn, fetchStaffInventory, createUsedTransaction } from '../services/api'
 import Sidebar from '../components/Sidebar'
 import UserSidebar from '../components/UserSidebar'
 import BarcodeScanner from '../components/BarcodeScanner'

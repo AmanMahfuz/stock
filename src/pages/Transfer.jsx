@@ -303,39 +303,41 @@ export default function Transfer() {
                 ) : (
                   <div className="space-y-4">
                     {items.map(i => (
-                      <div key={i.id} className="flex items-center gap-4 p-4 bg-zinc-50 dark:bg-zinc-900/50 rounded-lg">
+                      <div key={i.id} className="flex flex-col sm:flex-row sm:items-center gap-4 p-4 bg-zinc-50 dark:bg-zinc-900/50 rounded-lg">
                         <div className="flex-1">
                           <div className="font-medium text-zinc-900 dark:text-white">{i.name}</div>
                           <div className="text-sm text-zinc-500 dark:text-zinc-400">SKU: {i.barcode}</div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => updateQty(i.id, -1)}
-                            className="w-8 h-8 flex items-center justify-center bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded hover:bg-zinc-100 dark:hover:bg-zinc-700"
-                          >
-                            <span className="material-symbols-outlined text-sm">remove</span>
-                          </button>
-                          <input
-                            type="number"
-                            min="1"
-                            value={i.qty}
-                            onChange={e => {
-                              const val = parseInt(e.target.value) || 1
-                              setItems(prev => prev.map(item => item.id === i.id ? { ...item, qty: Math.max(1, val) } : item))
-                            }}
-                            className="w-16 text-center font-medium text-zinc-900 dark:text-white bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded px-2 py-1 outline-none focus:ring-2 focus:ring-primary/20"
-                          />
-                          <button
-                            onClick={() => updateQty(i.id, 1)}
-                            className="w-8 h-8 flex items-center justify-center bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded hover:bg-zinc-100 dark:hover:bg-zinc-700"
-                          >
-                            <span className="material-symbols-outlined text-sm">add</span>
-                          </button>
+                        <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto mt-2 sm:mt-0">
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => updateQty(i.id, -1)}
+                              className="w-10 h-10 flex items-center justify-center bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-700 active:scale-95 transition-transform"
+                            >
+                              <span className="material-symbols-outlined text-sm">remove</span>
+                            </button>
+                            <input
+                              type="number"
+                              min="1"
+                              value={i.qty}
+                              onChange={e => {
+                                const val = parseInt(e.target.value) || 1
+                                setItems(prev => prev.map(item => item.id === i.id ? { ...item, qty: Math.max(1, val) } : item))
+                              }}
+                              className="w-16 text-center font-bold text-lg text-zinc-900 dark:text-white bg-transparent outline-none"
+                            />
+                            <button
+                              onClick={() => updateQty(i.id, 1)}
+                              className="w-10 h-10 flex items-center justify-center bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-700 active:scale-95 transition-transform"
+                            >
+                              <span className="material-symbols-outlined text-sm">add</span>
+                            </button>
+                          </div>
                           <button
                             onClick={() => removeItem(i.id)}
-                            className="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors ml-2"
+                            className="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors text-red-600 dark:text-red-400"
                           >
-                            <span className="material-symbols-outlined text-red-600 dark:text-red-400 text-lg">delete</span>
+                            <span className="material-symbols-outlined text-xl">delete</span>
                           </button>
                         </div>
                       </div>
