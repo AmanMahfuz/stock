@@ -181,9 +181,11 @@ export default function Transactions() {
                                                             ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'
                                                             : tx.type === 'RETURN'
                                                                 ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400'
-                                                                : 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+                                                                : tx.type === 'USED'
+                                                                    ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400'
+                                                                    : 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
                                                             }`}>
-                                                            {tx.type === 'TRANSFER' ? '→ Out' : tx.type === 'RETURN' ? '↺ In' : '↓ Rec'}
+                                                            {tx.type === 'TRANSFER' ? '→ Out' : tx.type === 'RETURN' ? '↺ In' : tx.type === 'USED' ? '✓ Used' : '↓ Rec'}
                                                         </span>
                                                     </div>
                                                     <div className="flex justify-between items-center text-sm mt-3">
@@ -229,13 +231,17 @@ export default function Transactions() {
                                                                     ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'
                                                                     : tx.type === 'RETURN'
                                                                         ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400'
-                                                                        : 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+                                                                        : tx.type === 'USED'
+                                                                            ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400'
+                                                                            : 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
                                                                     }`}>
                                                                     {tx.type === 'TRANSFER'
                                                                         ? '→ To Customer'
                                                                         : tx.type === 'RETURN'
                                                                             ? '↺ Return'
-                                                                            : '↓ Received'
+                                                                            : tx.type === 'USED'
+                                                                                ? '✓ Used / Installed'
+                                                                                : '↓ Received'
                                                                     }
                                                                 </span>
                                                             </td>

@@ -122,6 +122,7 @@ export default function ReturnPage() {
     if (window.confirm(`Mark ${remainingToUse} ${item.product?.name} as USED/INSTALLED? This will remove them from your inventory.`)) {
       try {
         await createUsedTransaction({
+          user_id: isAdmin && selectedUserId ? selectedUserId : undefined,
           items: [{
             productId: productId,
             qty: remainingToUse
@@ -131,15 +132,16 @@ export default function ReturnPage() {
         setAccountedFor(prev => {
           const next = { ...prev }
           delete next[productId]
-          localStorage.setItem(`accountedFor_${currentUser?.id}`, JSON.stringify(next))
+          const storageKey = isAdmin && selectedUserId ? `accountedFor_${selectedUserId}` : `accountedFor_${currentUser?.id}`
+          localStorage.setItem(storageKey, JSON.stringify(next))
           return next
         })
 
         // Reload inventory
         loadInventory()
-        alert('Items marked as used.')
+        alert('✅ Item marked as USED and removed from your returnable inventory.\nYou can view this record in the Transactions page.')
       } catch (e) {
-        alert('Failed: ' + e.message)
+        alert('Failed/Cancelled: ' + e.message)
       }
     }
   }
@@ -165,7 +167,10 @@ export default function ReturnPage() {
     }
 
     try {
-      await createReturn({ items: itemsToReturn })
+      await createReturn({
+        items: itemsToReturn,
+        user_id: isAdmin && selectedUserId ? selectedUserId : undefined
+      })
 
       // Mark returned products as "All Used" - the remainder is considered sold/used
       const newAccountedFor = { ...accountedFor }
@@ -307,7 +312,7 @@ export default function ReturnPage() {
                       <option value="">All Users</option>
                       {users.map(user => (
                         <option key={user.id} value={user.id}>
-                          {user.name} ({user.email})
+                          {user.name}
                         </option>
                       ))}
                     </select>
