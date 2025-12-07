@@ -21,14 +21,24 @@ export default function BarcodeScanner({ onScan, onClose }) {
         async function startScanning() {
             try {
                 const devices = await BrowserMultiFormatReader.listVideoInputDevices()
-                const selectedDeviceId = devices[0]?.deviceId || undefined
+                // Prefer Back Camera
+                const backCamera = devices.find(d => d.label.toLowerCase().includes('back') || d.label.toLowerCase().includes('rear'))
+                const selectedDeviceId = backCamera ? backCamera.deviceId : (devices[0]?.deviceId || undefined)
 
-                if (mounted && selectedDeviceId) {
+                if (mounted) {
+                    // Start decoding from video device
+                    // If we found a specific back camera, use its ID.
+                    // Otherwise, pass undefined which lets ZXing choose, but we prefer 'environment' in constraints if possible.
+                    // However, BrowserMultiFormatReader.decodeFromVideoDevice takes deviceId (string) or undefined. It doesn't take constraints directly here.
+                    // The best way with ZXing is to pass the specific Device ID.
+
                     controlsRef.current = await codeReader.decodeFromVideoDevice(selectedDeviceId, videoRef.current, (result) => {
                         if (mounted && result) {
                             handleSuccess(result.getText())
                         }
                     })
+                } else {
+                    setError("No camera found")
                 }
             } catch (err) {
                 if (mounted) {
