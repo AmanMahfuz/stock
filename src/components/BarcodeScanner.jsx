@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { BrowserMultiFormatReader, BarcodeFormat, DecodeHintType } from '@zxing/browser'
+import { BrowserMultiFormatReader } from '@zxing/browser'
+import { BarcodeFormat, DecodeHintType } from '@zxing/library'
 
 export default function BarcodeScanner({ onScan, onClose }) {
     const [error, setError] = useState(null)
