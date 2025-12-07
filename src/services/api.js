@@ -81,26 +81,36 @@ export async function resetPassword(email) {
 
 
 export async function getCurrentUser() {
-  // First check local storage for quick access
+  // 1. Get from Local Storage (Instant UI load)
   const stored = localStorage.getItem('tsm_user')
-  if (stored) return JSON.parse(stored)
+  let user = stored ? JSON.parse(stored) : null
 
-  // If not in localStorage, check Supabase session (auto-restores on page load)
-  const { data: { session } } = await supabase.auth.getSession()
-  if (session) {
-    const user = {
+  // 2. VERIFY with Supabase (Background Check) - Important for deployment
+  const { data: { session }, error } = await supabase.auth.getSession()
+
+  if (!session) {
+    // Session is invalid/expired but we have stale local data -> LOGOUT
+    if (user) {
+      console.warn("Session invalid, clearing stale user data")
+      localStorage.removeItem('tsm_user')
+      return null // Will trigger redirection to Login
+    }
+  } else {
+    // Session is valid, refresh local storage to match server truth
+    user = {
       id: session.user.id,
       email: session.user.email,
       role: session.user.user_metadata?.role || 'USER',
       name: session.user.user_metadata?.name || session.user.email.split('@')[0],
       token: session.access_token
     }
-    saveUser(user) // Sync to localStorage
-    return user
+    saveUser(user)
   }
 
-  return null
+  return user
 }
+
+
 
 export function saveUser(data) {
   localStorage.setItem('tsm_user', JSON.stringify(data))
