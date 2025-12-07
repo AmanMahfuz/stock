@@ -179,6 +179,57 @@ export default function AdminDashboard() {
     }
   }
 
+  // --- CATEGORY HANDLERS ---
+  async function handleAddCategory(e) {
+    e.preventDefault()
+    if (!newCategoryName.trim()) return
+
+    setLoading(true)
+    try {
+      await createCategory(newCategoryName)
+      setNewCategoryName('')
+      const cData = await fetchCategories()
+      setCategories(cData)
+    } catch (error) {
+      console.error("Failed to create category", error)
+      alert("Failed to create category")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function handleUpdateCategory(e) {
+    e.preventDefault()
+    if (!editingCategory || !newCategoryName.trim()) return
+
+    setLoading(true)
+    try {
+      await updateCategory(editingCategory.id, newCategoryName)
+      setNewCategoryName('')
+      setEditingCategory(null)
+      const cData = await fetchCategories()
+      setCategories(cData)
+    } catch (error) {
+      console.error("Failed to update category", error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function handleDeleteCategory(id) {
+    if (!confirm("Delete this category?")) return
+    setLoading(true)
+    try {
+      await deleteCategory(id)
+      const cData = await fetchCategories()
+      setCategories(cData)
+    } catch (error) {
+      console.error("Failed to delete category", error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <div className="flex min-h-screen bg-zinc-50 dark:bg-[#1c1a16]">
       {showScanner && <BarcodeScanner onScan={handleScan} onClose={() => setShowScanner(false)} />}
