@@ -328,70 +328,134 @@ export default function ReturnPage() {
                   </div>
                 ) : filteredInventory.length > 0 ? (
                   <div>
-                    <table className="w-full">
-                      <thead>
-                        <tr className="border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50">
-                          <th className="text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase px-6 py-4 whitespace-nowrap">Product</th>
-                          <th className="text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase px-6 py-4 whitespace-nowrap">Category</th>
-                          <th className="text-center text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase px-6 py-4 whitespace-nowrap">You Have</th>
-                          <th className="text-center text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase px-6 py-4 whitespace-nowrap">Return Qty</th>
-                          <th className="text-center text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase px-6 py-4 whitespace-nowrap">All Used</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {filteredInventory.map(item => (
-                          <tr key={item.product_id} className="border-b border-zinc-100 dark:border-zinc-800/50 hover:bg-zinc-50 dark:hover:bg-zinc-900/30 transition-colors">
-                            <td className="px-6 py-4">
-                              <div className="flex items-center gap-3">
-                                <div>
-                                  <div className="font-medium text-sm text-zinc-900 dark:text-white whitespace-nowrap">{item.product?.name || 'Unknown'}</div>
-                                  <div className="text-xs text-zinc-500 dark:text-zinc-400 whitespace-nowrap">SKU: {item.product?.barcode}</div>
-                                </div>
-                              </div>
-                            </td>
-                            <td className="px-6 py-4 text-sm text-zinc-500 dark:text-zinc-400 whitespace-nowrap">{item.product?.category}</td>
-                            <td className="px-6 py-4 text-center text-sm font-medium text-zinc-900 dark:text-white whitespace-nowrap">{item.quantity}</td>
-                            <td className="px-6 py-4">
-                              <div className="flex items-center justify-center gap-2">
-                                <button
-                                  onClick={() => updateReturnQty(item.product_id, (returnQtys[item.product_id] || 0) - 1)}
-                                  className="w-8 h-8 flex items-center justify-center bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded hover:bg-zinc-100 dark:hover:bg-zinc-700"
-                                >
-                                  <span className="material-symbols-outlined text-sm">remove</span>
-                                </button>
-                                <input
-                                  type="number"
-                                  min="0"
-                                  max={item.quantity}
-                                  value={returnQtys[item.product_id] || 0}
-                                  onChange={e => updateReturnQty(item.product_id, e.target.value)}
-                                  className="w-20 text-center font-medium text-zinc-900 dark:text-white bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded px-2 py-1 outline-none focus:ring-2 focus:ring-primary/20"
-                                />
-                                <button
-                                  onClick={() => updateReturnQty(item.product_id, (returnQtys[item.product_id] || 0) + 1)}
-                                  disabled={returnQtys[item.product_id] >= item.quantity}
-                                  className="w-8 h-8 flex items-center justify-center bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded hover:bg-zinc-100 dark:hover:bg-zinc-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                  <span className="material-symbols-outlined text-sm">add</span>
-                                </button>
-                              </div>
-                            </td>
-                            <td className="px-6 py-4">
-                              <div className="flex items-center justify-center">
-                                <label className="flex items-center cursor-pointer" title="Check to hide this product (rest is sold/used)">
-                                  <input
-                                    type="checkbox"
-                                    checked={accountedFor[item.product_id] || false}
-                                    onChange={e => toggleAccountedFor(item.product_id, e.target.checked)}
-                                    className="w-5 h-5 text-primary bg-white dark:bg-zinc-800 border-zinc-300 dark:border-zinc-600 rounded focus:ring-2 focus:ring-primary/20"
-                                  />
-                                </label>
-                              </div>
-                            </td>
+                    {/* Mobile Card View */}
+                    <div className="md:hidden space-y-4 p-4">
+                      {filteredInventory.map(item => (
+                        <div key={item.product_id} className="bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-4">
+                          <div className="flex justify-between items-start mb-3">
+                            <div>
+                              <div className="font-medium text-zinc-900 dark:text-white">{item.product?.name || 'Unknown'}</div>
+                              <div className="text-xs text-zinc-500">{item.product?.barcode}</div>
+                              <div className="text-xs text-zinc-500 mt-1">{item.product?.category}</div>
+                            </div>
+                            <div className="text-right">
+                              <div className="text-xs text-zinc-500">Owned</div>
+                              <div className="font-bold text-zinc-900 dark:text-white">{item.quantity} units</div>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center justify-between bg-white dark:bg-zinc-800 p-3 rounded border border-zinc-200 dark:border-zinc-700 mb-3">
+                            <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Return Qty:</span>
+                            <div className="flex items-center gap-3">
+                              <button
+                                onClick={() => updateReturnQty(item.product_id, (returnQtys[item.product_id] || 0) - 1)}
+                                className="w-8 h-8 flex items-center justify-center bg-zinc-100 dark:bg-zinc-700 rounded hover:bg-zinc-200 dark:hover:bg-zinc-600"
+                              >
+                                <span className="material-symbols-outlined text-sm">remove</span>
+                              </button>
+                              <input
+                                type="number"
+                                min="0"
+                                max={item.quantity}
+                                value={returnQtys[item.product_id] || 0}
+                                onChange={e => updateReturnQty(item.product_id, e.target.value)}
+                                className="w-16 text-center font-bold bg-transparent outline-none"
+                              />
+                              <button
+                                onClick={() => updateReturnQty(item.product_id, (returnQtys[item.product_id] || 0) + 1)}
+                                disabled={returnQtys[item.product_id] >= item.quantity}
+                                className="w-8 h-8 flex items-center justify-center bg-zinc-100 dark:bg-zinc-700 rounded hover:bg-zinc-200 dark:hover:bg-zinc-600 disabled:opacity-50"
+                              >
+                                <span className="material-symbols-outlined text-sm">add</span>
+                              </button>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center justify-between">
+                            <div className="text-sm text-zinc-600 dark:text-zinc-400">
+                              Mark remaining as <span className="font-bold text-primary">USED</span>?
+                            </div>
+                            <label className="relative inline-flex items-center cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={accountedFor[item.product_id] || false}
+                                onChange={e => toggleAccountedFor(item.product_id, e.target.checked)}
+                                className="sr-only peer"
+                              />
+                              <div className="w-11 h-6 bg-zinc-200 peer-focus:outline-none rounded-full peer dark:bg-zinc-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                            </label>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Desktop Table View */}
+                    <div className="hidden md:block overflow-x-auto">
+                      <table className="w-full">
+                        <thead>
+                          <tr className="border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50">
+                            <th className="text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase px-6 py-4 whitespace-nowrap">Product</th>
+                            <th className="text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase px-6 py-4 whitespace-nowrap">Category</th>
+                            <th className="text-center text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase px-6 py-4 whitespace-nowrap">You Have</th>
+                            <th className="text-center text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase px-6 py-4 whitespace-nowrap">Return Qty</th>
+                            <th className="text-center text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase px-6 py-4 whitespace-nowrap">All Used</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody>
+                          {filteredInventory.map(item => (
+                            <tr key={item.product_id} className="border-b border-zinc-100 dark:border-zinc-800/50 hover:bg-zinc-50 dark:hover:bg-zinc-900/30 transition-colors">
+                              <td className="px-6 py-4">
+                                <div className="flex items-center gap-3">
+                                  <div>
+                                    <div className="font-medium text-sm text-zinc-900 dark:text-white whitespace-nowrap">{item.product?.name || 'Unknown'}</div>
+                                    <div className="text-xs text-zinc-500 dark:text-zinc-400 whitespace-nowrap">SKU: {item.product?.barcode}</div>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 text-sm text-zinc-500 dark:text-zinc-400 whitespace-nowrap">{item.product?.category}</td>
+                              <td className="px-6 py-4 text-center text-sm font-medium text-zinc-900 dark:text-white whitespace-nowrap">{item.quantity}</td>
+                              <td className="px-6 py-4">
+                                <div className="flex items-center justify-center gap-2">
+                                  <button
+                                    onClick={() => updateReturnQty(item.product_id, (returnQtys[item.product_id] || 0) - 1)}
+                                    className="w-8 h-8 flex items-center justify-center bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded hover:bg-zinc-100 dark:hover:bg-zinc-700"
+                                  >
+                                    <span className="material-symbols-outlined text-sm">remove</span>
+                                  </button>
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    max={item.quantity}
+                                    value={returnQtys[item.product_id] || 0}
+                                    onChange={e => updateReturnQty(item.product_id, e.target.value)}
+                                    className="w-20 text-center font-medium text-zinc-900 dark:text-white bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded px-2 py-1 outline-none focus:ring-2 focus:ring-primary/20"
+                                  />
+                                  <button
+                                    onClick={() => updateReturnQty(item.product_id, (returnQtys[item.product_id] || 0) + 1)}
+                                    disabled={returnQtys[item.product_id] >= item.quantity}
+                                    className="w-8 h-8 flex items-center justify-center bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded hover:bg-zinc-100 dark:hover:bg-zinc-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                                  >
+                                    <span className="material-symbols-outlined text-sm">add</span>
+                                  </button>
+                                </div>
+                              </td>
+                              <td className="px-6 py-4">
+                                <div className="flex items-center justify-center">
+                                  <label className="flex items-center cursor-pointer" title="Check to hide this product (rest is sold/used)">
+                                    <input
+                                      type="checkbox"
+                                      checked={accountedFor[item.product_id] || false}
+                                      onChange={e => toggleAccountedFor(item.product_id, e.target.checked)}
+                                      className="w-5 h-5 text-primary bg-white dark:bg-zinc-800 border-zinc-300 dark:border-zinc-600 rounded focus:ring-2 focus:ring-primary/20"
+                                    />
+                                  </label>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
 
                     <div className="p-6 border-t border-zinc-200 dark:border-zinc-800">
                       <div className="flex flex-col sm:flex-row gap-3">
