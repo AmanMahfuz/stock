@@ -537,7 +537,7 @@ export default function AdminDashboard() {
           {activeTab === 'products' && (
             <div>
               <div className="flex flex-col md:flex-row justify-between mb-4 gap-4">
-                <h2 className="text-xl font-bold text-zinc-900 dark:text-white">Product Inventory</h2>
+                <h2 className="text-xl font-bold text-zinc-900 dark:text-white">Product Management</h2>
                 <div className="flex flex-col md:flex-row gap-2">
                   <select
                     className="px-4 py-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg outline-none text-sm text-zinc-900 dark:text-white"

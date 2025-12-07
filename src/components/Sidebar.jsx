@@ -13,7 +13,7 @@ export default function Sidebar({ className, onClose, isOpen }) {
 
     const navItems = [
         { path: '/admin', icon: 'dashboard', label: 'Dashboard' },
-        { path: '/products', icon: 'inventory_2', label: 'Products' },
+        { path: '/products', icon: 'inventory_2', label: 'Product Management' },
         { path: '/transfer', icon: 'sync_alt', label: 'Transfers' },
         { path: '/return', icon: 'keyboard_return', label: 'Return Stock' },
         { path: '/reports', icon: 'assessment', label: 'Reports' },
