@@ -309,7 +309,29 @@ export default function AdminDashboard() {
       <div className="flex-1 flex flex-col min-w-0 lg:ml-64">
         <MobileHeader onMenuClick={() => setMobileMenuOpen(true)} title="Admin Dashboard" />
         <main className="flex-1 p-4 lg:p-8 pb-24">
-
+          {/* Header & Actions */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+            <div>
+              <h1 className="text-2xl font-bold text-zinc-900 dark:text-white">Dashboard Overview</h1>
+              <p className="text-sm text-zinc-500 dark:text-zinc-400">Manage inventory and view activity.</p>
+            </div>
+            <div className="flex gap-3 w-full sm:w-auto">
+              <button
+                onClick={() => navigate('/return')}
+                className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-white rounded-lg font-medium hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors shadow-sm"
+              >
+                <span className="material-symbols-outlined">keyboard_return</span>
+                Return Stock
+              </button>
+              <button
+                onClick={() => navigate('/transfer')}
+                className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 transition-colors shadow-sm"
+              >
+                <span className="material-symbols-outlined">sync_alt</span>
+                Transfer Stock
+              </button>
+            </div>
+          </div>
           {/* Tab Navigation */}
           <div className="flex gap-4 border-b border-zinc-200 dark:border-zinc-800 mb-6 overflow-x-auto">
             <button
@@ -360,16 +382,7 @@ export default function AdminDashboard() {
 
               {/* Transaction / Activity Section */}
               <div>
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
-                  <h2 className="text-xl font-bold text-zinc-900 dark:text-white">Daily Activities & Transactions</h2>
-                  <button
-                    onClick={() => navigate('/return')}
-                    className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-white rounded-lg font-medium hover:bg-zinc-50 dark:hover:bg-zinc-700"
-                  >
-                    <span className="material-symbols-outlined">keyboard_return</span>
-                    Return Stock
-                  </button>
-                </div>
+                <h2 className="text-xl font-bold text-zinc-900 dark:text-white mb-4">Daily Activities & Transactions</h2>
 
                 {/* Controls */}
                 <div className="bg-white dark:bg-[#191714] p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 flex flex-col md:flex-row gap-4 justify-between items-center mb-6">
