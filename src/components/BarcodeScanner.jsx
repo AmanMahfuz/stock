@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { BrowserMultiFormatReader } from '@zxing/browser'
+import { BrowserMultiFormatReader, BarcodeFormat, DecodeHintType } from '@zxing/browser'
 
 export default function BarcodeScanner({ onScan, onClose }) {
     const [error, setError] = useState(null)
@@ -15,7 +15,20 @@ export default function BarcodeScanner({ onScan, onClose }) {
     }, [])
 
     useEffect(() => {
-        const codeReader = new BrowserMultiFormatReader()
+        const hints = new Map()
+        const formats = [
+            BarcodeFormat.QR_CODE,
+            BarcodeFormat.CODE_128,
+            BarcodeFormat.EAN_13,
+            BarcodeFormat.EAN_8,
+            BarcodeFormat.UPC_A,
+            BarcodeFormat.UPC_E,
+            BarcodeFormat.CODE_39
+        ]
+        hints.set(DecodeHintType.POSSIBLE_FORMATS, formats)
+        hints.set(DecodeHintType.TRY_HARDER, true)
+
+        const codeReader = new BrowserMultiFormatReader(hints, 500) // 500ms delay between scans
         let mounted = true
 
         async function startScanning() {
