@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { BrowserMultiFormatReader } from '@zxing/browser'
-import { BarcodeFormat, DecodeHintType } from '@zxing/library'
 
 export default function BarcodeScanner({ onScan, onClose }) {
     const [error, setError] = useState(null)
@@ -16,20 +15,10 @@ export default function BarcodeScanner({ onScan, onClose }) {
     }, [])
 
     useEffect(() => {
-        const hints = new Map()
-        const formats = [
-            BarcodeFormat.QR_CODE,
-            BarcodeFormat.CODE_128,
-            BarcodeFormat.EAN_13,
-            BarcodeFormat.EAN_8,
-            BarcodeFormat.UPC_A,
-            BarcodeFormat.UPC_E,
-            BarcodeFormat.CODE_39
-        ]
-        hints.set(DecodeHintType.POSSIBLE_FORMATS, formats)
-        hints.set(DecodeHintType.TRY_HARDER, true)
-
-        const codeReader = new BrowserMultiFormatReader(hints, 500) // 500ms delay between scans
+        // Use default hints (null) to match the working image uploader behavior. 
+        // This enables all supported barcode formats.
+        // We keep the 500ms delay between scans to avoid performance issues.
+        const codeReader = new BrowserMultiFormatReader(null, 500)
         let mounted = true
 
         async function startScanning() {

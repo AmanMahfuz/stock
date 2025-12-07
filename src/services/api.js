@@ -448,7 +448,7 @@ export async function fetchStaffInventory(userId) {
         selling_price
       )
     `)
-    .eq('type', 'TRANSFER')
+  // .eq('type', 'TRANSFER') // REMOVED: We need all types to calculate net holding
 
   // If not admin or no userId specified, only show current user's items
   if (currentUser.role !== 'ADMIN' || !userId) {
@@ -465,7 +465,7 @@ export async function fetchStaffInventory(userId) {
     return []
   }
 
-  // Group by product and sum quantities
+  // Group by product and calculate net quantity
   const grouped = {}
   data.forEach(transaction => {
     const productId = transaction.product_id
@@ -477,11 +477,19 @@ export async function fetchStaffInventory(userId) {
         transactions: []
       }
     }
-    grouped[productId].quantity += transaction.quantity
+
+    // Calculate net quantity
+    if (transaction.type === 'TRANSFER') {
+      grouped[productId].quantity += transaction.quantity
+    } else if (transaction.type === 'RETURN' || transaction.type === 'USED') {
+      grouped[productId].quantity -= transaction.quantity
+    }
+
     grouped[productId].transactions.push(transaction)
   })
 
-  return Object.values(grouped)
+  // Filter out items with 0 or negative quantity (fully returned/used)
+  return Object.values(grouped).filter(item => item.quantity > 0)
 }
 
 // For admin: get all transferred items across all users
