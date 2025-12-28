@@ -91,25 +91,41 @@ export async function getCurrentUser() {
   let user = stored ? JSON.parse(stored) : null
 
   // 2. VERIFY with Supabase (Background Check) - Important for deployment
-  const { data: { session }, error } = await supabase.auth.getSession()
+  try {
+    const { data: { session }, error } = await supabase.auth.getSession()
 
-  if (!session) {
-    // Session is invalid/expired but we have stale local data -> LOGOUT
-    if (user) {
-      console.warn("Session invalid, clearing stale user data")
-      localStorage.removeItem('tsm_user')
-      return null // Will trigger redirection to Login
+    if (error) {
+      console.error("Session check error:", error)
+      // Only clear if there's an explicit auth error
+      if (user && error.message?.includes('refresh_token')) {
+        console.warn("Session expired, clearing stale user data")
+        localStorage.removeItem('tsm_user')
+        return null
+      }
+      // For other errors, return stored user to avoid logout
+      return user
     }
-  } else {
-    // Session is valid, refresh local storage to match server truth
-    user = {
-      id: session.user.id,
-      email: session.user.email,
-      role: session.user.user_metadata?.role || 'USER',
-      name: session.user.user_metadata?.name || session.user.email.split('@')[0],
-      token: session.access_token
+
+    if (session) {
+      // Session is valid, refresh local storage to match server truth
+      user = {
+        id: session.user.id,
+        email: session.user.email,
+        role: session.user.user_metadata?.role || 'USER',
+        name: session.user.user_metadata?.name || session.user.email.split('@')[0],
+        token: session.access_token
+      }
+      saveUser(user)
+    } else if (!user) {
+      // No session and no stored user - truly logged out
+      return null
     }
-    saveUser(user)
+    // If no session but we have stored user, keep them logged in
+    // (Supabase might still be loading the session)
+  } catch (err) {
+    console.error("Error checking session:", err)
+    // On error, trust stored user to avoid forced logout
+    return user
   }
 
   return user
